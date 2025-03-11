@@ -25,13 +25,13 @@ class GolgeTV : MainAPI() {
     override val supportedTypes = setOf(TvType.Live)
 
     override val mainPage = mainPageOf(
-        "https://panel2.cloudgolge.shop/appMainGetData.php" to "ULUSAL",
-        "https://panel2.cloudgolge.shop/appMainGetData.php" to "SPOR",
-        "https://panel2.cloudgolge.shop/appMainGetData.php" to "HABER",
-        "https://panel2.cloudgolge.shop/appMainGetData.php" to "BELGESEL",
-        "https://panel2.cloudgolge.shop/appMainGetData.php" to "SİNEMA",
-        "https://panel2.cloudgolge.shop/appMainGetData.php" to "ÇOCUK",
-        "https://panel2.cloudgolge.shop/appMainGetData.php" to "MÜZİK",
+        "https://panel.cloudgolge.shop/appMainGetData.php" to "ULUSAL",
+        "https://panel.cloudgolge.shop/appMainGetData.php" to "SPOR",
+        "https://panel.cloudgolge.shop/appMainGetData.php" to "HABER",
+        "https://panel.cloudgolge.shop/appMainGetData.php" to "BELGESEL",
+        "https://panel.cloudgolge.shop/appMainGetData.php" to "SİNEMA",
+        "https://panel.cloudgolge.shop/appMainGetData.php" to "ÇOCUK",
+        "https://panel.cloudgolge.shop/appMainGetData.php" to "MÜZİK",
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
