@@ -189,7 +189,7 @@ class WebteIzle : MainAPI() {
 
                 if (iframe == null) {
                     val scriptSource = embedApi.selectFirst("script")?.data() ?: ""
-                    val matchResult  = Regex("""(vidmoly|okru|filemoon)\('(.*)','""").find(scriptSource)
+                    val matchResult  = Regex("""(vidmoly|okru|filemoon)\('([\d\w]+)','""").find(scriptSource)
 
                     if (matchResult == null) {
                         Log.d("WBTI", "scriptSource » $scriptSource")
