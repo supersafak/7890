@@ -67,15 +67,9 @@ class WebteIzle : MainAPI() {
     }
 
     override val mainPage = mainPageOf(
-        "${mainUrl}/film-izle/"                    to "Güncel",
-        "${mainUrl}/yeni-filmler/"                 to "Yeni",
-        "${mainUrl}/tavsiye-filmler/"              to "Tavsiye",
-        // "${mainUrl}/filtre/SAYFA?tur=Aksiyon"      to "Aksiyon",
-        // "${mainUrl}/filtre/SAYFA?tur=Belgesel"     to "Belgesel",
-        // "${mainUrl}/filtre/SAYFA?tur=Bilim-Kurgu"  to "Bilim Kurgu",
-        // "${mainUrl}/filtre/SAYFA?tur=Komedi"       to "Komedi",
-        // "${mainUrl}/filtre/SAYFA?tur=Macera"       to "Macera",
-        // "${mainUrl}/filtre/SAYFA?tur=Romantik"     to "Romantik",
+        "${mainUrl}/film-izle/"                   to "Güncel",
+        "${mainUrl}/yeni-filmler/"                to "Yeni",
+        "${mainUrl}/tavsiye-filmler/"             to "Tavsiye",
         "${mainUrl}/filtre/SAYFA?tur=Aile"        to "Aile",
         "${mainUrl}/filtre/SAYFA?tur=Aksiyon"     to "Aksiyon",
         "${mainUrl}/filtre/SAYFA?tur=Animasyon"   to "Animasyon",
@@ -89,11 +83,8 @@ class WebteIzle : MainAPI() {
         "${mainUrl}/filtre/SAYFA?tur=Komedi"      to "Komedi",
         "${mainUrl}/filtre/SAYFA?tur=Korku"       to "Korku",
         "${mainUrl}/filtre/SAYFA?tur=Macera"      to "Macera",
-        "${mainUrl}/filtre/SAYFA?tur=Müzik"       to "Müzik",
         "${mainUrl}/filtre/SAYFA?tur=Romantik"    to "Romantik",
-        "${mainUrl}/filtre/SAYFA?tur=Savaş"       to "Savaş",
         "${mainUrl}/filtre/SAYFA?tur=Spor"        to "Spor",
-        "${mainUrl}/filtre/SAYFA?tur=Suç"         to "Suç",
         "${mainUrl}/filtre/SAYFA?tur=Tarihi"      to "Tarihi",
         "${mainUrl}/filtre/SAYFA?tur=Western"     to "Western"
     )
