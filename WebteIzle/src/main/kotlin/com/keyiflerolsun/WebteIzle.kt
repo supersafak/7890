@@ -188,7 +188,7 @@ class WebteIzle : MainAPI() {
                 var iframe = fixUrlNull(embedApi.selectFirst("iframe")?.attr("src"))
 
                 if (iframe == null) {
-                    val scriptSource = embedApi.selectFirst("script")?.data() ?: ""
+                    val scriptSource = embedApi.html()
                     val matchResult  = Regex("""(vidmoly|okru|filemoon)\('([\d\w]+)','""").find(scriptSource)
 
                     if (matchResult == null) {
