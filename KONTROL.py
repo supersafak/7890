@@ -107,7 +107,7 @@ class MainUrlUpdater:
                     konsol.log(f"[!] Kontrol Edilemedi : {mainurl}")
                     konsol.log(f"[!] {type(hata).__name__} : {hata}")
                     continue
-            if eklenti_adi == "GolgeTV":
+            elif eklenti_adi == "GolgeTV":
                 try:
                     final_url = self._golgetv_ver()
                     konsol.log(f"[+] Kontrol Edildi   : {mainurl}")
