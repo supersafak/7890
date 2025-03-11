@@ -2,7 +2,9 @@
 
 from Kekik.cli    import konsol
 from cloudscraper import CloudScraper
-import os, re
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+import os, re, base64, json
 
 class MainUrlUpdater:
     def __init__(self, base_dir="."):
@@ -78,6 +80,13 @@ class MainUrlUpdater:
         )
         return istek.json().get("entries", {}).get("api_url", "").replace("/api/", "")
 
+    def _golgetv_ver(self):
+        istek = self.oturum.get("https://raw.githubusercontent.com/sevdaliyim/sevdaliyim/refs/heads/main/ssl2.key").text
+        cipher = AES.new(b"trskmrskslmzbzcnfstkcshpfstkcshp", AES.MODE_CBC, b"trskmrskslmzbzcn")
+        encrypted_data = base64.b64decode(istek)
+        decrypted_data = unpad(cipher.decrypt(encrypted_data), AES.block_size).decode("utf-8")
+        return json.loads(decrypted_data, strict=False)["apiUrl"]
+
     @property
     def mainurl_listesi(self):
         return {
@@ -95,6 +104,15 @@ class MainUrlUpdater:
                     final_url = self._rectv_ver()
                     konsol.log(f"[+] Kontrol Edildi   : {mainurl}")
                 except Exception as hata:
+                    konsol.log(f"[!] Kontrol Edilemedi : {mainurl}")
+                    konsol.log(f"[!] {type(hata).__name__} : {hata}")
+                    continue
+            if eklenti_adi == "GolgeTV":
+                try:
+                    final_url = self._golgetv_ver()
+                    konsol.log(f"[+] Kontrol Edildi   : {mainurl}")
+                except Exception as hata:
+                    konsol.log(f"[!] Kontrol Edilemedi : {mainurl}")
                     konsol.log(f"[!] Kontrol Edilemedi : {mainurl}")
                     konsol.log(f"[!] {type(hata).__name__} : {hata}")
                     continue

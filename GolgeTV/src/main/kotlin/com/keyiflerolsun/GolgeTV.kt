@@ -20,18 +20,19 @@ import com.lagradost.cloudstream3.utils.loadExtractor
 
 class GolgeTV : MainAPI() {
     override var name = "GolgeTV"
+    override var mainUrl = "https://panel.cloudgolge.shop/appMainGetData.php"
     override val hasMainPage = true
     override var lang = "tr"
     override val supportedTypes = setOf(TvType.Live)
 
     override val mainPage = mainPageOf(
-        "https://panel.cloudgolge.shop/appMainGetData.php" to "ULUSAL",
-        "https://panel.cloudgolge.shop/appMainGetData.php" to "SPOR",
-        "https://panel.cloudgolge.shop/appMainGetData.php" to "HABER",
-        "https://panel.cloudgolge.shop/appMainGetData.php" to "BELGESEL",
-        "https://panel.cloudgolge.shop/appMainGetData.php" to "SİNEMA",
-        "https://panel.cloudgolge.shop/appMainGetData.php" to "ÇOCUK",
-        "https://panel.cloudgolge.shop/appMainGetData.php" to "MÜZİK",
+        this.mainUrl to "ULUSAL",
+        this.mainUrl to "SPOR",
+        this.mainUrl to "HABER",
+        this.mainUrl to "BELGESEL",
+        this.mainUrl to "SİNEMA",
+        this.mainUrl to "ÇOCUK",
+        this.mainUrl to "MÜZİK",
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
