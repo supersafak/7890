@@ -7,6 +7,7 @@
 [![CloudStream Derleyici](https://img.shields.io/github/actions/workflow/status/keyiflerolsun/Kekik-cloudstream/Derleyici.yml?label=CloudStream%20Derleyici&logo=github)](https://github.com/keyiflerolsun/Kekik-cloudstream/actions/workflows/Derleyici.yml)
 
 _CloudStream için Türkçe yayın yapan sitelere ait eklentiler_
+_Kullanabilmek için kendiniz derlemelisiniz.._
 
 [Döküman](https://recloudstream.github.io/csdocs/) **━** [Resmi Site](https://dweb.link/ipns/cloudstream.on.fleek.co/) **━** [Wiki](https://cloudstream.miraheze.org/wiki/Main_Page)
 
