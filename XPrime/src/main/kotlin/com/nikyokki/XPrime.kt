@@ -181,6 +181,7 @@ class XPrime : MainAPI() {
                 loadServers(it, id, movie, callback, subtitleCallback)
             } catch (e: Exception) {
                 e.printStackTrace()
+
                 return@forEach
             }
         }
