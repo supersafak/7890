@@ -177,7 +177,12 @@ class XPrime : MainAPI() {
         val serversUrl = "https://xprime.tv/servers"
         val servers    = app.get(serversUrl).parsedSafe<Servers>()
         servers?.servers?.forEach {
-            loadServers(it, id, movie, callback, subtitleCallback)
+            try {
+                loadServers(it, id, movie, callback, subtitleCallback)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return@forEach
+            }
         }
         return true
     }
