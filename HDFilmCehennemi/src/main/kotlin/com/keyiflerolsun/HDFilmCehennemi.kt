@@ -51,12 +51,12 @@ class HDFilmCehennemi : MainAPI() {
     override val hasQuickSearch       = true
     override val supportedTypes       = setOf(TvType.Movie, TvType.TvSeries)
 
-    //Cf bypass
+    // ! Cf bypass
     override var sequentialMainPage = true        // * https://recloudstream.github.io/dokka/-cloudstream/com.lagradost.cloudstream3/-main-a-p-i/index.html#-2049735995%2FProperties%2F101969414
     override var sequentialMainPageDelay       = 200L 
     override var sequentialMainPageScrollDelay = 200L  
 
-    // Cf bypass v2
+    // ! cf bypass v2
     private val cloudflareKiller by lazy { CloudflareKiller() }
     private val interceptor      by lazy { CloudflareInterceptor(cloudflareKiller) }
 
@@ -74,6 +74,8 @@ class HDFilmCehennemi : MainAPI() {
         }
     }
 
+
+
     override val mainPage = mainPageOf(
         "${mainUrl}/load/page/sayfano/home/"                                       to "Yeni Eklenen Filmler",
         "${mainUrl}/load/page/sayfano/categories/nette-ilk-filmler/"               to "Nette İlk Filmler",
@@ -89,7 +91,9 @@ class HDFilmCehennemi : MainAPI() {
         "${mainUrl}/load/page/sayfano/genres/bilim-kurgu-filmlerini-izleyin-3/"    to "Bilim Kurgu Filmleri",
         "${mainUrl}/load/page/sayfano/genres/komedi-filmlerini-izleyin-1/"         to "Komedi Filmleri",
         "${mainUrl}/load/page/sayfano/genres/korku-filmlerini-izle-4/"             to "Korku Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/romantik-filmleri-izle-2/"            to "Romantik Filmleri"
+        "${mainUrl}/load/page/sayfano/genres/romantik-filmleri-izle-2/"            to "Romantik Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/suc-filmleri-izle-3/"                 to "Suç Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/tarih-filmleri-izle-4/"               to "Tarih Filmleri"
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
