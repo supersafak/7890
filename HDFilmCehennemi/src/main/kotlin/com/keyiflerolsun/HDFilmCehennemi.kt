@@ -38,6 +38,8 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import com.lagradost.cloudstream3.utils.newExtractorLink
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import com.lagradost.cloudstream3.network.CloudflareKiller
+import okhttp3.Interceptor
 
 class HDFilmCehennemi : MainAPI() {
     override var mainUrl = "https://www.hdfilmcehennemi.nl"
