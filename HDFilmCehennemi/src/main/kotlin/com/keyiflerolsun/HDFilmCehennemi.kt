@@ -47,11 +47,6 @@ class HDFilmCehennemi : MainAPI() {
     override val hasQuickSearch = true
     override val supportedTypes = setOf(TvType.Movie, TvType.TvSeries)
 
-    // ! CloudFlare bypass
-    override var sequentialMainPage = true
-    override var sequentialMainPageDelay = 50L
-    override var sequentialMainPageScrollDelay = 50L
-
     override val mainPage = mainPageOf(
         "${mainUrl}/load/page/sayfano/home/" to "Yeni Eklenen Filmler",
         "${mainUrl}/load/page/sayfano/categories/nette-ilk-filmler/" to "Nette İlk Filmler",
