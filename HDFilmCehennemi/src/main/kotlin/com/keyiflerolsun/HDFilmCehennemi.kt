@@ -66,14 +66,12 @@ class HDFilmCehennemi : MainAPI() {
             val response = chain.proceed(request)
             val doc      = Jsoup.parse(response.peekBody(1024 * 1024).string())
 
-            if (doc.html().contains("Just a moment")) {
+            if (doc.select("title").text() == "Just a moment..." || doc.select("title").text() == "Bir dakika lütfen...") {
                 return cloudflareKiller.intercept(chain)
             }
-
             return response
         }
     }
-
 
 
     override val mainPage = mainPageOf(
