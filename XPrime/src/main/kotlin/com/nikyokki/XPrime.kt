@@ -41,7 +41,7 @@ class XPrime : MainAPI() {
     private val imgUrl = "https://image.tmdb.org/t/p/w500"
     private val backImgUrl = "https://image.tmdb.org/t/p/w780"
     private val backendUrl = "https://backend.xprime.tv"
-
+    private val xUrl = "https://xprime.tv/"
     override val mainPage = mainPageOf(
         "$mainUrl/trending/movie/week?api_key=$apiKey&language=tr-TR&page=SAYFA" to "Popüler",
         "$mainUrl/movie/now_playing?api_key=$apiKey&language=tr-TR&page=SAYFA" to "Sinemalarda",
@@ -216,7 +216,7 @@ class XPrime : MainAPI() {
                     ) {
                         this. quality = getQualityFromName(it)
                         this.headers = mapOf("Origin" to mainUrl)
-                        this.referer = mainUrl
+                        this.referer = xUrl
                     }
                 )
             }
@@ -242,9 +242,9 @@ class XPrime : MainAPI() {
                         url = source,
                         ExtractorLinkType.M3U8
                     ) {
-                        this.headers = mapOf("Origin" to mainUrl)
+                        this.headers = mapOf("Origin" to xUrl)
                         this.quality = Qualities.Unknown.value
-                        this.referer = mainUrl
+                        this.referer = xUrl
                     }
                 )
             }
