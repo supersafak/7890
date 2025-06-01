@@ -174,7 +174,7 @@ class XPrime : MainAPI() {
                 )
             )
         }
-        val serversUrl = "https://xprime.tv/servers"
+        val serversUrl = "https://backend.xprime.tv/servers"
         val servers    = app.get(serversUrl).parsedSafe<Servers>()
         servers?.servers?.forEach {
             try {
@@ -215,8 +215,8 @@ class XPrime : MainAPI() {
                         ExtractorLinkType.VIDEO
                     ) {
                         this. quality = getQualityFromName(it)
-                        this.headers = mapOf("Origin" to "https://xprime.tv/")
-                        this.referer = "https://xprime.tv/"
+                        this.headers = mapOf("Origin" to mainUrl)
+                        this.referer = mainUrl
                     }
                 )
             }
@@ -242,9 +242,9 @@ class XPrime : MainAPI() {
                         url = source,
                         ExtractorLinkType.M3U8
                     ) {
-                        this.headers = mapOf("Origin" to "https://xprime.tv/")
+                        this.headers = mapOf("Origin" to mainUrl)
                         this.quality = Qualities.Unknown.value
-                        this.referer = "https://xprime.tv/"
+                        this.referer = mainUrl
                     }
                 )
             }
