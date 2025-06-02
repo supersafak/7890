@@ -115,7 +115,7 @@ class SineWix : MainAPI() {
         val actors          = result.cast?.map { Actor(it.name!!, it.profilePath) }
         val trailer         = result.trailer
 
-        return newMovieLoadResponse(title!!, result.videos?.get(0)?.link!!, TvType.Movie, url) {
+        return newMovieLoadResponse(title!!, result.videos?.get(0)?.link!!, TvType.Movie, result.videos[0].link!!) {
             this.posterUrl       = poster
             this.plot            = description
             this.year            = year
@@ -194,7 +194,6 @@ class SineWix : MainAPI() {
 
     override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
         Log.d("SWX", "data » $data")
-
         if (data.contains("snwaxdop")) {
             callback.invoke(
                 newExtractorLink(
