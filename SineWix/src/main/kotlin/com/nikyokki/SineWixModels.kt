@@ -21,6 +21,7 @@ data class SineMovie(
     @JsonProperty("tmdb_id") val tmdb: Int? = null,
     @JsonProperty("imdb_external_id") val imdb: String? = null,
     @JsonProperty("original_name") val originalName: String? = null,
+    @JsonProperty("title") val title: String? = null,
     @JsonProperty("overview") val overview: String? = null,
     @JsonProperty("poster_path") val posterPath: String? = null,
     @JsonProperty("backdrop_path") val backdropPath: String? = null,

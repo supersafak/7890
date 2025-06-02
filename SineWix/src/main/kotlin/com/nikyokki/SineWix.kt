@@ -105,7 +105,9 @@ class SineWix : MainAPI() {
         val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         val result: SineMovie = objectMapper.readValue(document.body().text())
-        val title           = result.originalName
+        val originalName    = result.originalName
+        val name            = result.title
+        val title           = "$originalName - $name"
         val poster          = result.backdropPath
         val description     = result.overview
         val year            = result.releaseDate?.split("-")?.first()?.toIntOrNull()
@@ -115,7 +117,7 @@ class SineWix : MainAPI() {
         val actors          = result.cast?.map { Actor(it.name!!, it.profilePath) }
         val trailer         = result.trailer
 
-        return newMovieLoadResponse(title!!, result.videos?.get(0)?.link!!, TvType.Movie, result.videos[0].link!!) {
+        return newMovieLoadResponse(title, result.videos?.get(0)?.link!!, TvType.Movie, result.videos[0].link!!) {
             this.posterUrl       = poster
             this.plot            = description
             this.year            = year
@@ -134,7 +136,7 @@ class SineWix : MainAPI() {
         val result: SineSerie = objectMapper.readValue(document.body().text())
         val originalName = result.originalName ?: ""
         val name = result.name ?: ""
-        val title           = "$name $originalName"
+        val title           = "$originalName - $name"
         Log.d("SWX", "title » $title")
         val poster          = result.backdropPath
         Log.d("SWX", "poster » $poster")
