@@ -38,6 +38,7 @@ import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.getAndUnpack
 import com.lagradost.cloudstream3.utils.newExtractorLink
 import com.lagradost.cloudstream3.network.CloudflareKiller
+import com.lagradost.cloudstream3.utils.loadExtractor
 import okhttp3.Interceptor
 import okhttp3.Response
 import org.jsoup.Jsoup
@@ -274,14 +275,19 @@ override suspend fun loadLinks(
             ).text
             Log.d("HDCH", "Found videoID: $videoID")
             var iframe = Regex("""data-src=\\"([^"]+)""").find(apiGet)?.groupValues?.get(1)!!.replace("\\", "")
-            Log.d("HDCH", "$iframe » $iframe")
+            Log.d("HDCH", "iframe » $iframe")
+            iframe = iframe.replace("{rapidrame_id}", "")
+            Log.d("HDCH", "iframe » $iframe")
             if (iframe.contains("rapidrame")) {
                 iframe = "${mainUrl}/rplayer/" + iframe.substringAfter("?rapidrame_id=")
             } else if (iframe.contains("mobi")) {
                 val iframeDoc = Jsoup.parse(apiGet)
-                iframe = fixUrlNull(iframeDoc.selectFirst("iframe")?.attr("data-src")) ?: return@forEach
+                iframe = fixUrlNull((iframeDoc.selectFirst("iframe")?.attr("data-src"))?.replace("\"","")?.replace("\\", "")?.replace("{rapidrame_id}", "")) ?: return@forEach
             }
             Log.d("HDCH", "$source » $videoID » $iframe")
+            if (iframe.contains("hdfilmcehennemi.mobi")) {
+                loadExtractor(iframe, data, subtitleCallback, callback)
+            }
             invokeLocalSource(source, iframe, subtitleCallback, callback)
         }
     }
