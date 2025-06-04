@@ -6,7 +6,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import java.io.InputStream
 
-class CanliTV : MainAPI() {
+class TRGoals : MainAPI() {
     override var mainUrl              = "https://raw.githubusercontent.com/patr0nq/link/refs/heads/main/sakultah.m3u"
     override var name                 = "TRGoals"
     override val hasMainPage          = true
