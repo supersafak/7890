@@ -46,6 +46,11 @@ class Dizilla : MainAPI() {
     override val supportedTypes = setOf(TvType.TvSeries)
 
 
+    // ! CloudFlare bypass
+    override var sequentialMainPage = true        // * https://recloudstream.github.io/dokka/-cloudstream/com.lagradost.cloudstream3/-main-a-p-i/index.html#-2049735995%2FProperties%2F101969414
+    override var sequentialMainPageDelay       = 50L  // ? 0.05 saniye
+    override var sequentialMainPageScrollDelay = 50L  // ? 0.05 saniye
+
     override val mainPage = mainPageOf(
         "${mainUrl}/tum-bolumler" to "Altyazılı Bölümler",
         "${mainUrl}/arsiv" to "Yeni Eklenen Diziler",
