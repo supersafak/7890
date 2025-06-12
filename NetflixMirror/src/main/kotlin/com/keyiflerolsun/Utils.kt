@@ -1,17 +1,16 @@
 package com.keyiflerolsun
-import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.utils.*
+
 import com.fasterxml.jackson.core.json.JsonReadFeature
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.lagradost.cloudstream3.USER_AGENT
+import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.nicehttp.Requests
 import com.lagradost.nicehttp.ResponseParser
-import kotlin.reflect.KClass
-import okhttp3.FormBody
-import com.lagradost.nicehttp.NiceResponse
 import kotlinx.coroutines.delay
+import okhttp3.FormBody
+import kotlin.reflect.KClass
 
 val JSONParser = object : ResponseParser {
     val mapper: ObjectMapper = jacksonObjectMapper().configure(
@@ -65,6 +64,7 @@ fun convertRuntimeToMinutes(runtime: String): Int {
                 val hours = part.removeSuffix("h").trim().toIntOrNull() ?: 0
                 totalMinutes += hours * 60
             }
+
             part.endsWith("m") -> {
                 val minutes = part.removeSuffix("m").trim().toIntOrNull() ?: 0
                 totalMinutes += minutes
@@ -76,30 +76,50 @@ fun convertRuntimeToMinutes(runtime: String): Int {
 }
 
 data class VerifyUrl(
-    val url: String
+    val nfverifyurl: String
 )
 
-suspend fun bypass(mainUrl : String): String {
-    val homePageDocument = app.get("${mainUrl}/mobile/home").document
-    val addHash          = homePageDocument.select("body").attr("data-addhash")
-    val time             = homePageDocument.select("body").attr("data-time")
+suspend fun bypass(mainUrl: String): String {
+    // Check persistent storage first
+    val (savedCookie, savedTimestamp) = NetflixMirrorStorage.getCookie()
 
-    var verificationUrl  = "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/NF.json"
-    verificationUrl      = app.get(verificationUrl).parsed<VerifyUrl>().url.replace("###", addHash)
-    // val hashDigits       = addHash.filter { it.isDigit() }
-    // val first16Digits    = hashDigits.take(16)
-    // app.get("${verificationUrl}&t=0.${first16Digits}")
-    app.get(verificationUrl + "&t=${time}")
+    // Return cached cookie if valid (≤15 hours old)
+    if (!savedCookie.isNullOrEmpty() && System.currentTimeMillis() - savedTimestamp < 54_000_000) {
+        return savedCookie
+    }
 
-    var verifyCheck: String
-    var verifyResponse: NiceResponse
+    // Fetch new cookie if expired/missing
+    val newCookie = try {
+        val homePageDocument = app.get("${mainUrl}/mobile/home").document
+        val addHash = homePageDocument.select("body").attr("data-addhash")
+        val time = homePageDocument.select("body").attr("data-time")
 
-    do {
-        delay(1000)
-        val requestBody = FormBody.Builder().add("verify", addHash).build()
-        verifyResponse  = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
-        verifyCheck     = verifyResponse.text
-    } while (!verifyCheck.contains("\"statusup\":\"All Done\""))
+        var verificationUrl =
+            "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json"
+        verificationUrl =
+            app.get(verificationUrl).parsed<VerifyUrl>().nfverifyurl.replace("###", addHash)
+        app.get("$verificationUrl&t=$time")
 
-    return verifyResponse.cookies["t_hash_t"].orEmpty()
+        var verifyCheck: String
+        var verifyResponse: NiceResponse
+
+        do {
+            delay(1000)
+            val requestBody = FormBody.Builder().add("verify", addHash).build()
+            verifyResponse = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
+            verifyCheck = verifyResponse.text
+        } while (!verifyCheck.contains("\"statusup\":\"All Done\""))
+
+        verifyResponse.cookies["t_hash_t"].orEmpty()
+    } catch (e: Exception) {
+        // Clear invalid cookie on failure
+        NetflixMirrorStorage.clearCookie()
+        throw e
+    }
+
+    // Persist the new cookie
+    if (newCookie.isNotEmpty()) {
+        NetflixMirrorStorage.saveCookie(newCookie)
+    }
+    return newCookie
 }

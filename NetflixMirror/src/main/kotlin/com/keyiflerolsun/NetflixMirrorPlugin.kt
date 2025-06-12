@@ -7,6 +7,7 @@ import android.content.Context
 @CloudstreamPlugin
 class NetflixMirrorPlugin: Plugin() {
     override fun load(context: Context) {
+        NetflixMirrorStorage.init(context.applicationContext)
         registerMainAPI(NetflixMirror())
         registerMainAPI(PrimeVideoMirror())
     }
