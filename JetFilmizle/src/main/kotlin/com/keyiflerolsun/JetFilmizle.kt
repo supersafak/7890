@@ -133,22 +133,40 @@ class JetFilmizle : MainAPI() {
                 }
             }
         }
+        val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
         iframes.forEach { iframe ->
             try {
                 if (iframe.contains("jetv.xyz")) {
                     Log.d("JTF", "jetv » $iframe")
                     val jetvDoc    = app.get(iframe).document
-                    val jetvIframe = fixUrlNull(jetvDoc.selectFirst("iframe")?.attr("src")) ?: return@forEach
+                    /*val jetvIframe = fixUrlNull(jetvDoc.selectFirst("iframe")?.attr("src")) ?: return@forEach
                     Log.d("JTF", "jetvIframe » $jetvIframe")
+                    loadExtractor(jetvIframe, "${mainUrl}/", subtitleCallback, callback)*/
+                    val script =
+                        jetvDoc.select("script").find { it.data().contains("\"sources\": [") }
+                            ?.data()
+                            ?: ""
+                    val source = script.substringAfter("\"sources\": [").substringBefore("]")
+                        .addMarks("file").addMarks("type").addMarks("label").replace("\'", "\"")
+                    Log.d("JTF", "source -> $source")
+                    val son: Source = objectMapper.readValue(source)
+                    callback.invoke(
+                        newExtractorLink(
+                            source = "Jetv" + " - " + son.label,
+                            name = "Jetv" + " - " + son.label,
+                            url = son.file,
+                            ExtractorLinkType.M3U8
+                        ) {
+                            this. quality = Qualities.Unknown.value
+                        }
+                    )
 
-                    loadExtractor(jetvIframe, "${mainUrl}/", subtitleCallback, callback)
                 } else if (iframe.contains("d2rs.com")) {
                     val doc = app.get(iframe).text
                     val parameter = doc.substringAfter("form.append(\"q\", \"").substringBefore("\");");
                     val d2List = app.post("https://d2rs.com/zeus/api.php", data = mapOf("q" to parameter), referer = iframe).body.string()
-                    val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
-                    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                     val son: List<Source> = objectMapper.readValue(d2List)
                     for (it in son) {
                         val type = if (it.type == "video/mp4") {
@@ -175,8 +193,6 @@ class JetFilmizle : MainAPI() {
                     val script = doc.select("script").find { it.data().contains("eval(function(p,a,c,k,e,") }?.data() ?: ""
                     val unpacked = JsUnpacker(script).unpack()
                     val kaken = unpacked?.substringAfter("window.kaken=\"")?.substringBefore("\";") ?: ""
-                    val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
-                    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                     val urls = "https://s2.videolar.biz/api/"
                     val mediaType = "text/plain".toMediaType()
                     val requestBody = kaken.toRequestBody(mediaType)
@@ -209,5 +225,9 @@ class JetFilmizle : MainAPI() {
             }
         }
         return true
+    }
+
+    private fun String.addMarks(str: String): String {
+        return this.replace(Regex("\"?$str\"?"), "\"$str\"")
     }
 }
