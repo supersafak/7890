@@ -12,6 +12,7 @@ import com.lagradost.cloudstream3.ErrorLoadingException
 import com.lagradost.cloudstream3.HomePageResponse
 import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
+import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
 import com.lagradost.cloudstream3.SearchResponse
@@ -173,88 +174,94 @@ class RoketDizi : MainAPI() {
     override suspend fun quickSearch(query: String): List<SearchResponse> = search(query)
 
     override suspend fun load(url: String): LoadResponse? {
-        val mainReq = app.get(url)
-        val document = mainReq.document
+        val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        val encodedDoc = app.get(url).document
+        val script = encodedDoc.selectFirst("script#__NEXT_DATA__")?.data()
+        val secureData =
+            objectMapper.readTree(script).get("props").get("pageProps").get("secureData")
+        val decodedJson = base64Decode(secureData.toString().replace("\"", ""))
+        val bytes = decodedJson.toByteArray(Charsets.ISO_8859_1)
+        val converted = String(bytes, Charsets.UTF_8)
+        val root: Root = objectMapper.readValue(converted)
+        val item = root.contentItem
+        val orgTitle = item.originalTitle
+        val cultTitle = item.cultureTitle.toString()
+        val title =
+            if (orgTitle == cultTitle || cultTitle.isEmpty()) orgTitle else "$orgTitle - $cultTitle"
+        val poster = fixUrlNull(
+            item.posterUrl?.replace(
+                "images-macellan-online.cdn.ampproject.org/i/s/",
+                ""
+            )
+        )
+        val description = item.description
+        val year = item.releaseYear
+        val tags = item.categories?.split(",")
+        val rating = item.imdbPoint
+        val duration = item.totalMinutes
+        val actors = root.relatedResults.getMovieCastsById?.result?.map {
+            Actor(
+                it.name!!,
+                fixUrlNull(
+                    it.castImage?.replace(
+                        "images-macellan-online.cdn.ampproject.org/i/s/",
+                        ""
+                    )
+                )
+            )
+        }
+        var trailer = ""
+        if (root.relatedResults.getContentTrailers?.state == true && root.relatedResults.getContentTrailers.result?.size!! > 0) {
+            Log.d("SFX", "getContentTrailers null değil")
+            Log.d(
+                "SFX",
+                "getContentTrailers ->  ${root.relatedResults.getContentTrailers.result}"
+            )
+            trailer = root.relatedResults.getContentTrailers.result[0].rawUrl.toString()
+        }
 
-        if (url.contains("/dizi/")) {
-            val title = document.selectFirst("h1.text-white")?.text() ?: return null
-            val poster =
-                fixUrlNull(document.selectFirst("div.w-full.page-top.relative img")?.attr("src"))
-            val year =
-                document.select("div.w-fit.min-w-fit")[1].selectFirst("span.text-sm.opacity-60")
-                    ?.text()
-                    ?.split(" ")?.last()?.toIntOrNull()
-            val description = document.selectFirst("div.mt-2.text-sm")?.text()?.trim()
-            val tags = document.selectFirst("h3.text-white.opacity-60.text-sm")?.text()?.split(",")?.map { it }
-            val rating =
-                document.selectFirst("div.flex.items-center")
-                    ?.selectFirst("span.text-white.text-sm")
-                    ?.text()?.trim().toRatingInt()
-            val actors = document.select("div.global-box h5").map {
-                Actor(it.text())
-            }
-
-            val episodeses = mutableListOf<Episode>()
-
-            for (sezon in document.select("div.flex.items-center.flex-wrap.gap-2.mb-4 a")) {
-                val sezonhref = fixUrl(sezon.attr("href"))
-                val sezonReq = app.get(sezonhref)
-                val split = sezonhref.split("-")
-                val season = split[split.size-2].toIntOrNull()
-                val sezonDoc = sezonReq.document
-                val episodes = sezonDoc.select("div.episodes")
-                for (bolum in episodes.select("div.cursor-pointer")) {
-                    val epName = bolum.select("a").last()?.text() ?: continue
-                    val epHref = fixUrlNull(bolum.select("a").last()?.attr("href")) ?: continue
-                    val epEpisode = bolum.selectFirst("a")?.text()?.trim()?.toIntOrNull()
-                    val newEpisode = newEpisode(epHref) {
-                        this.name = epName
-                        this.season = season
-                        this.episode = epEpisode
-                    }
-                    episodeses.add(newEpisode)
+        if (root.relatedResults.getSerieSeasonAndEpisodes != null) {
+            Log.d("SFX", "getSerieSeasonAndEpisodes null değil")
+            Log.d(
+                "SFX",
+                "getSerieSeasonAndEpisodes ->  ${root.relatedResults.getSerieSeasonAndEpisodes}"
+            )
+            val eps = mutableListOf<Episode>()
+            root.relatedResults.getSerieSeasonAndEpisodes.seasons?.forEach { it ->
+                val szn = it.seasonNo
+                Log.d("SFX", "Szn -> $szn")
+                val episodes = it.episodes
+                Log.d("SFX", "episodes -> $episodes")
+                episodes?.forEach {
+                    eps.add(newEpisode(fixUrlNull(it.usedSlug)) {
+                        this.name = it.epText
+                        this.season = szn
+                        this.episode = it.episodeNo
+                    })
                 }
+                Log.d("SFX", "eps -> $eps")
             }
-
-            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodeses) {
+            return newTvSeriesLoadResponse(title!!, url, TvType.TvSeries, eps) {
                 this.posterUrl = poster
                 this.year = year
                 this.plot = description
                 this.tags = tags
                 this.rating = rating
                 addActors(actors)
+                addTrailer(trailer)
             }
-        } else {
-            var yil: Int? = null;
-            val title = document.selectFirst("h1.text-white")?.text() ?: return null
-            val poster = fixUrlNull(
-                document.selectFirst("div.relative.aspect-\\[2\\/3\\] img")?.attr("src")
-            )
-            val description = document.selectFirst("p.text-lg.text-gray-300")?.text()?.trim()
-            document.select("div.flex.items-center").forEach { item ->
-                if (item.selectFirst("span")?.text()?.contains("tarih") == true) {
-                    yil = item.selectFirst("div.w-fit.rounded-lg")?.text()?.toIntOrNull()
-                }
-            }
-            val tags =
-                document.select("div.flex.flex-wrap.gap-2 a")
-                    .map { it.text() }
-            val rating =
-                document.selectFirst("div.flex.items-center")
-                    ?.selectFirst("span.text-white.text-sm")
-                    ?.text()?.trim().toRatingInt()
-            val actors = mutableListOf<Actor>()
-            document.select("span.sm\\:min-w-\\[33\\%\\]").forEach { it ->
-                actors.add(Actor(it.selectFirst("span.text-center.sm\\:text-left")?.text().toString(), it.selectFirst("img")?.attr("src")))
-            }
-            return newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl = poster
-                this.year = yil
-                this.plot = description
-                this.rating = rating
-                this.tags = tags
-                addActors(actors)
-            }
+        }
+
+        return newMovieLoadResponse(title!!, url, TvType.Movie, url) {
+            this.posterUrl = poster
+            this.plot = description
+            this.year = year
+            this.tags = tags
+            this.rating = rating
+            this.duration = duration
+            addActors(actors)
+            addTrailer(trailer)
         }
 
     }
