@@ -1,6 +1,11 @@
 package com.nikyokki
 
+import android.util.Base64
 import android.util.Log
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.lagradost.cloudstream3.Actor
 import com.lagradost.cloudstream3.Episode
 import com.lagradost.cloudstream3.ErrorLoadingException
@@ -13,6 +18,8 @@ import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.app
+import com.lagradost.cloudstream3.base64Decode
+import com.lagradost.cloudstream3.fixUrl
 import com.lagradost.cloudstream3.fixUrlNull
 import com.lagradost.cloudstream3.mainPageOf
 import com.lagradost.cloudstream3.newEpisode
@@ -24,6 +31,8 @@ import com.lagradost.cloudstream3.newTvSeriesSearchResponse
 import com.lagradost.cloudstream3.toRatingInt
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.loadExtractor
+import org.json.JSONObject
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
 class RoketDizi : MainAPI() {
@@ -95,16 +104,13 @@ class RoketDizi : MainAPI() {
         }
     }
 
-    private fun toSearchResponse(ad: String, link: String, posterLink: String): SearchResponse {
-        if (link.contains("dizi")) {
-            return newTvSeriesSearchResponse(
-                ad,
-                link,
-                TvType.TvSeries,
-            ) {
-                this.posterUrl = posterLink
-            }
-        } else {
+    private fun toSearchResponse(
+        ad: String,
+        link: String,
+        posterLink: String,
+        type: String
+    ): SearchResponse {
+        if (type == "Movies") {
             return newMovieSearchResponse(
                 ad,
                 link,
@@ -112,54 +118,54 @@ class RoketDizi : MainAPI() {
             ) {
                 this.posterUrl = posterLink
             }
+        } else {
+            return newTvSeriesSearchResponse(
+                ad,
+                link,
+                TvType.TvSeries,
+            ) {
+                this.posterUrl = posterLink
+            }
         }
+
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val mainReq = app.get(mainUrl)
-        val mainPage = mainReq.document
-        val cKey = mainPage.selectFirst("input[name='cKey']")?.attr("value") ?: return emptyList()
-        val cValue =
-            mainPage.selectFirst("input[name='cValue']")?.attr("value") ?: return emptyList()
-        val cookie = mainReq.cookies["PHPSESSID"].toString()
-        println("Ckey: $cKey ---- Cvalue: $cValue ---- cookie: $cookie")
-
-        val veriler = mutableListOf<SearchResponse>()
-
         val searchReq = app.post(
-            "${mainUrl}/bg/searchcontent",
-            data = mapOf(
-                "cKey" to cKey,
-                "cValue" to cValue,
-                "searchterm" to query
-            ),
+            "${mainUrl}/api/bg/searchcontent?searchterm=$query",
             headers = mapOf(
-                "Accept" to "application/json, text/javascript, */*; q=0.01",
+                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0",
+                "Accept" to "application/json, text/plain, */*",
+                "Accept-Language" to "en-US,en;q=0.5",
                 "X-Requested-With" to "XMLHttpRequest",
-                "Cookie" to "PHPSESSID=$cookie"
+                "Sec-Fetch-Site" to "same-origin",
+                "Sec-Fetch-Mode" to "cors",
+                "Sec-Fetch-Dest" to "empty",
+                "Referer" to "${mainUrl}/"
             ),
             referer = "${mainUrl}/",
-            cookies = mapOf(
-                "CNT" to "vakTR",
-                "PHPSESSID" to cookie
-            )
-        ).parsedSafe<SearchResult>()
-        println("SearchReq: $searchReq")
-
-        if (searchReq?.data?.state != true) {
+        )
+        val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        val searchResult: SearchResult = objectMapper.readValue(searchReq.toString())
+        val decodedSearch = base64Decode(searchResult.response.toString())
+        val bytes = decodedSearch.toByteArray(Charsets.ISO_8859_1)
+        val converted = String(bytes, Charsets.UTF_8)
+        val contentJson: SearchData = objectMapper.readValue(converted)
+        if (contentJson.state != true) {
             throw ErrorLoadingException("Invalid Json response")
         }
-
-        val searchDoc = searchReq.data.html?.trim()
-
-        searchDoc?.trim()?.split("</a>")?.forEach { item ->
-            val bb = item.substringAfter("<a href=\"").substringBefore("\"")
-            val diziUrl = bb.trim()
-            val cc = item.substringAfter("data-srcset=\"").substringBefore(" 1x")
-            val posterLink = cc.trim()
-            val dd = item.substringAfter("<span class=\"text-white\">").substringBefore("</span>")
-            val ad = dd.trim()
-            toSearchResponse(ad, diziUrl, posterLink)?.let { veriler.add(it) }
+        val veriler = mutableListOf<SearchResponse>()
+        contentJson.result?.forEach {
+            val name = it.title.toString()
+            val link = fixUrl(it.slug.toString())
+            val posterLink =
+                it.poster.toString().replace("images-macellan-online.cdn.ampproject.org/i/s/", "")
+            val type = it.type.toString()
+            val toSearchResponse = toSearchResponse(name, link, posterLink, type)
+            if (!link.contains("/seri-filmler/")) {
+                veriler.add(toSearchResponse)
+            }
         }
         return veriler
     }
@@ -171,7 +177,7 @@ class RoketDizi : MainAPI() {
         val document = mainReq.document
 
         if (url.contains("/dizi/")) {
-            val title = document.selectFirst("div.poster.hidden h2")?.text() ?: return null
+            val title = document.selectFirst("h1.text-white")?.text() ?: return null
             val poster =
                 fixUrlNull(document.selectFirst("div.w-full.page-top.relative img")?.attr("src"))
             val year =
@@ -179,7 +185,7 @@ class RoketDizi : MainAPI() {
                     ?.text()
                     ?.split(" ")?.last()?.toIntOrNull()
             val description = document.selectFirst("div.mt-2.text-sm")?.text()?.trim()
-            val tags = document.selectFirst("div.poster.hidden h3")?.text()?.split(",")?.map { it }
+            val tags = document.selectFirst("h3.text-white.opacity-60.text-sm")?.text()?.split(",")?.map { it }
             val rating =
                 document.selectFirst("div.flex.items-center")
                     ?.selectFirst("span.text-white.text-sm")
@@ -190,23 +196,23 @@ class RoketDizi : MainAPI() {
 
             val episodeses = mutableListOf<Episode>()
 
-            for (sezon in document.select("div.hideComments.p-4 a")) {
-                val sezonhref = sezon.attr("href")
+            for (sezon in document.select("div.flex.items-center.flex-wrap.gap-2.mb-4 a")) {
+                val sezonhref = fixUrl(sezon.attr("href"))
                 val sezonReq = app.get(sezonhref)
-                val eps = sezonhref.lastOrNull()?.digitToInt()
+                val split = sezonhref.split("-")
+                val season = split[split.size-2].toIntOrNull()
                 val sezonDoc = sezonReq.document
                 val episodes = sezonDoc.select("div.episodes")
                 for (bolum in episodes.select("div.cursor-pointer")) {
                     val epName = bolum.select("a").last()?.text() ?: continue
                     val epHref = fixUrlNull(bolum.select("a").last()?.attr("href")) ?: continue
                     val epEpisode = bolum.selectFirst("a")?.text()?.trim()?.toIntOrNull()
-
-                    episodeses.add(
-                        newEpisode(epHref) {
-                            this.name = epName
-                            this.season = eps
-                            this.episode = epEpisode
-                        })
+                    val newEpisode = newEpisode(epHref) {
+                        this.name = epName
+                        this.season = season
+                        this.episode = epEpisode
+                    }
+                    episodeses.add(newEpisode)
                 }
             }
 
@@ -220,28 +226,26 @@ class RoketDizi : MainAPI() {
             }
         } else {
             var yil: Int? = null;
-            val title = document.selectFirst("div.poster.hidden h2")?.text() ?: return null
+            val title = document.selectFirst("h1.text-white")?.text() ?: return null
             val poster = fixUrlNull(
-                document.selectFirst("div.flex.items-start.gap-4.slider-top img")?.attr("src")
+                document.selectFirst("div.relative.aspect-\\[2\\/3\\] img")?.attr("src")
             )
-            val description = document.selectFirst("div.mt-2.text-md")?.text()?.trim()
+            val description = document.selectFirst("p.text-lg.text-gray-300")?.text()?.trim()
             document.select("div.flex.items-center").forEach { item ->
                 if (item.selectFirst("span")?.text()?.contains("tarih") == true) {
                     yil = item.selectFirst("div.w-fit.rounded-lg")?.text()?.toIntOrNull()
                 }
             }
             val tags =
-                document.select("div.text-white.text-md.opacity-90.flex.items-center.gap-2.overflow-auto.mt-1 a")
+                document.select("div.flex.flex-wrap.gap-2 a")
                     .map { it.text() }
             val rating =
                 document.selectFirst("div.flex.items-center")
                     ?.selectFirst("span.text-white.text-sm")
                     ?.text()?.trim().toRatingInt()
             val actors = mutableListOf<Actor>()
-            document.select("div.w-fit.min-w-fit.rounded-lg").forEach { a ->
-                if (a.selectFirst("span")?.text()?.contains("Aktör") == true) {
-                    actors.add(Actor(a.selectFirst("a")?.text()!!))
-                }
+            document.select("span.sm\\:min-w-\\[33\\%\\]").forEach { it ->
+                actors.add(Actor(it.selectFirst("span.text-center.sm\\:text-left")?.text().toString(), it.selectFirst("img")?.attr("src")))
             }
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
@@ -261,13 +265,53 @@ class RoketDizi : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        Log.d("RKD", "data » ${data}")
-        val document = app.get(data).document
-        val iframe =
-            fixUrlNull(document.selectFirst("div.bg-prm iframe")?.attr("src")) ?: return false
-        Log.d("RKD", "iframe » $iframe")
+        Log.d("SFX", "data » $data")
+        val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        val encodedDoc = app.get(data).document
+        val script = encodedDoc.selectFirst("script#__NEXT_DATA__")?.data()
+        val secureData =
+            objectMapper.readTree(script).get("props").get("pageProps").get("secureData")
+        val decodedJson = base64Decode(secureData.toString().replace("\"", ""))
+        val bytes = decodedJson.toByteArray(Charsets.UTF_8)
+        val converted = String(bytes, Charsets.UTF_8)
+        val root: Root = objectMapper.readValue(converted)
+        val iframes = mutableListOf<SourceItem>()
+        val relatedResults = root.relatedResults
+        if (data.contains("/dizi/")) {
+            if (relatedResults.getEpisodeSources?.state == true) {
+                relatedResults.getEpisodeSources.result?.forEach { it ->
+                    iframes.add(SourceItem(it.sourceContent.toString(), it.qualityName.toString()))
+                }
+            }
+        } else {
+            if (relatedResults.getMoviePartsById?.state == true) {
+                val ids = mutableListOf<Int>()
+                objectMapper.readTree(converted).get("RelatedResults").get("getMoviePartsById")
+                    .get("result").forEach { it ->
+                        ids.add(it.get("id").asInt())
+                    }
+                relatedResults.getMoviePartsById.result?.forEach { it ->
+                    objectMapper.readTree(converted).get("RelatedResults")
+                        .get("getMoviePartSourcesById_${it.id}")
+                        .get("result").forEach { ifs ->
+                            iframes.add(
+                                SourceItem(
+                                    ifs.get("source_content").asText(),
+                                    ifs.get("quality_name").asText()
+                                )
+                            )
+                        }
+                }
+            }
+        }
+        Log.d("SFX", "iframes -> $iframes")
+        iframes.forEach { it ->
+            val iframe = fixUrlNull(Jsoup.parse(it.sourceContent).select("iframe").attr("src"))
+            Log.d("SFX", "iframe » $iframe")
+            loadExtractor(iframe!!, "${mainUrl}/", subtitleCallback, callback)
+        }
 
-        loadExtractor(iframe, "${mainUrl}/", subtitleCallback, callback)
         return true
     }
 }
