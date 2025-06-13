@@ -1,5 +1,3 @@
-
-
 package com.nikyokki
 
 import android.util.Log
@@ -68,26 +66,32 @@ class RoketDizi : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val mainReq = app.get("${request.data}?&page=${page}")
-
         val document = mainReq.document
-        val home = document.select("a.w-full").mapNotNull { it.diziler() }
-
+        if (request.data.contains("/dizi/")) {
+            val home = document.select("span.bg-\\[\\#232323\\]").mapNotNull { it.diziler() }
+            return newHomePageResponse(request.name, home)
+        }
+        val home = document.select("a.w-full").mapNotNull { it.filmler() }
         return newHomePageResponse(request.name, home)
     }
 
-    private fun Element.diziler(): SearchResponse? {
+    private fun Element.filmler(): SearchResponse? {
         val title = this.selectFirst("h2")?.text() ?: return null
         val href = fixUrlNull(this.attr("href")) ?: return null
-        val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("data-src"))
+        val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
 
-        return if (href.contains("/dizi/")) {
-            newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
-                this.posterUrl = posterUrl
-            }
-        } else {
-            newMovieSearchResponse(title, href, TvType.Movie) {
-                this.posterUrl = posterUrl
-            }
+        return newMovieSearchResponse(title, href, TvType.Movie) {
+            this.posterUrl = posterUrl
+        }
+    }
+
+    private fun Element.diziler(): SearchResponse? {
+        val title = this.selectFirst("span.font-normal.line-clamp-1")?.text() ?: return null
+        val href = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null
+        val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+
+        return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
+            this.posterUrl = posterUrl
         }
     }
 
@@ -168,14 +172,17 @@ class RoketDizi : MainAPI() {
 
         if (url.contains("/dizi/")) {
             val title = document.selectFirst("div.poster.hidden h2")?.text() ?: return null
-            val poster = fixUrlNull(document.selectFirst("div.w-full.page-top.relative img")?.attr("src"))
+            val poster =
+                fixUrlNull(document.selectFirst("div.w-full.page-top.relative img")?.attr("src"))
             val year =
-                document.select("div.w-fit.min-w-fit")[1].selectFirst("span.text-sm.opacity-60")?.text()
+                document.select("div.w-fit.min-w-fit")[1].selectFirst("span.text-sm.opacity-60")
+                    ?.text()
                     ?.split(" ")?.last()?.toIntOrNull()
             val description = document.selectFirst("div.mt-2.text-sm")?.text()?.trim()
             val tags = document.selectFirst("div.poster.hidden h3")?.text()?.split(",")?.map { it }
             val rating =
-                document.selectFirst("div.flex.items-center")?.selectFirst("span.text-white.text-sm")
+                document.selectFirst("div.flex.items-center")
+                    ?.selectFirst("span.text-white.text-sm")
                     ?.text()?.trim().toRatingInt()
             val actors = document.select("div.global-box h5").map {
                 Actor(it.text())
@@ -214,29 +221,34 @@ class RoketDizi : MainAPI() {
         } else {
             var yil: Int? = null;
             val title = document.selectFirst("div.poster.hidden h2")?.text() ?: return null
-            val poster = fixUrlNull(document.selectFirst("div.flex.items-start.gap-4.slider-top img")?.attr("src"))
+            val poster = fixUrlNull(
+                document.selectFirst("div.flex.items-start.gap-4.slider-top img")?.attr("src")
+            )
             val description = document.selectFirst("div.mt-2.text-md")?.text()?.trim()
             document.select("div.flex.items-center").forEach { item ->
                 if (item.selectFirst("span")?.text()?.contains("tarih") == true) {
-                   yil  = item.selectFirst("div.w-fit.rounded-lg")?.text()?.toIntOrNull()
+                    yil = item.selectFirst("div.w-fit.rounded-lg")?.text()?.toIntOrNull()
                 }
             }
-            val tags = document.select("div.text-white.text-md.opacity-90.flex.items-center.gap-2.overflow-auto.mt-1 a").map { it.text() }
+            val tags =
+                document.select("div.text-white.text-md.opacity-90.flex.items-center.gap-2.overflow-auto.mt-1 a")
+                    .map { it.text() }
             val rating =
-                document.selectFirst("div.flex.items-center")?.selectFirst("span.text-white.text-sm")
+                document.selectFirst("div.flex.items-center")
+                    ?.selectFirst("span.text-white.text-sm")
                     ?.text()?.trim().toRatingInt()
             val actors = mutableListOf<Actor>()
-            document.select("div.w-fit.min-w-fit.rounded-lg") .forEach { a ->
+            document.select("div.w-fit.min-w-fit.rounded-lg").forEach { a ->
                 if (a.selectFirst("span")?.text()?.contains("Aktör") == true) {
                     actors.add(Actor(a.selectFirst("a")?.text()!!))
                 }
             }
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl       = poster
-                this.year            = yil
-                this.plot            = description
-                this.rating          = rating
-                this.tags            = tags
+                this.posterUrl = poster
+                this.year = yil
+                this.plot = description
+                this.rating = rating
+                this.tags = tags
                 addActors(actors)
             }
         }
