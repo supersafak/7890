@@ -66,10 +66,8 @@ class DisneyPlusProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
-        thashCookie_value = if(thashCookie_value.isEmpty()) bypassThash(mainUrl) else thashCookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
-            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )
@@ -104,10 +102,8 @@ class DisneyPlusProvider : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
-        thashCookie_value = if(thashCookie_value.isEmpty()) bypassThash(mainUrl) else thashCookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
-            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )
@@ -125,10 +121,8 @@ class DisneyPlusProvider : MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         val id = parseJson<Id>(url).id
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
-        thashCookie_value = if(thashCookie_value.isEmpty()) bypassThash(mainUrl) else thashCookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
-            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )
@@ -196,7 +190,6 @@ class DisneyPlusProvider : MainAPI() {
         val episodes = arrayListOf<Episode>()
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
-            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )
@@ -233,7 +226,6 @@ class DisneyPlusProvider : MainAPI() {
         val (title, id) = parseJson<LoadData>(data)
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
-            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )
