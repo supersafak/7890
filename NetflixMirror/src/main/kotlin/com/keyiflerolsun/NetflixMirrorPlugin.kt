@@ -10,5 +10,6 @@ class NetflixMirrorPlugin: Plugin() {
         NetflixMirrorStorage.init(context.applicationContext)
         registerMainAPI(NetflixMirror())
         registerMainAPI(PrimeVideoMirror())
+        registerMainAPI(DisneyPlusProvider())
     }
 }
