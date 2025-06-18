@@ -33,6 +33,8 @@ class DisneyPlusProvider : MainAPI() {
     override val hasMainPage = true
     private var cookie_value = ""
     private val headers = mapOf(
+        "user-agent"       to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
+        "User-Agent"       to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
         "X-Requested-With" to "XMLHttpRequest"
     )
 
