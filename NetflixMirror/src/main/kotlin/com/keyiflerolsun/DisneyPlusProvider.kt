@@ -28,7 +28,7 @@ class DisneyPlusProvider : MainAPI() {
     override var lang = "en"
 
     override var mainUrl = "https://netfree2.cc"
-    override var name = "PrimeVideoMirror"
+    override var name = "DisneyPlusMirror"
 
     override val hasMainPage = true
     private var cookie_value = ""
