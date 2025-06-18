@@ -19,6 +19,13 @@ object NetflixMirrorStorage {
         editor.apply()
     }
 
+    fun saveTHashCookie(cookie: String) {
+        val editor = prefs.edit()
+        editor.putString("thash_cookie", cookie)
+        editor.putLong("thash_cookie_timestamp", System.currentTimeMillis())
+        editor.apply()
+    }
+
     fun getCookie(): Pair<String?, Long> {
         return Pair(
             prefs.getString("nf_cookie", null),
@@ -26,10 +33,24 @@ object NetflixMirrorStorage {
         )
     }
 
+    fun getTHashCookie(): Pair<String?, Long> {
+        return Pair(
+            prefs.getString("thash_cookie", null),
+            prefs.getLong("thash_cookie_timestamp", 0L)
+        )
+    }
+
     fun clearCookie() {
         val editor = prefs.edit()
         editor.remove("nf_cookie")
         editor.remove("nf_cookie_timestamp")
+        editor.apply()
+    }
+
+    fun clearTHashCookie() {
+        val editor = prefs.edit()
+        editor.remove("thash_cookie")
+        editor.remove("thash_cookie_timestamp")
         editor.apply()
     }
 }

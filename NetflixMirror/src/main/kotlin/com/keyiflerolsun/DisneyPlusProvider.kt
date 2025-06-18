@@ -32,10 +32,13 @@ class DisneyPlusProvider : MainAPI() {
 
     override val hasMainPage = true
     private var cookie_value = ""
+    private var thashCookie_value = ""
     private val headers = mapOf(
+        "X-Requested-With" to "XMLHttpRequest"
+    )
+    private val mainHeaders = mapOf(
         "user-agent"       to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
         "User-Agent"       to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
-        "X-Requested-With" to "XMLHttpRequest"
     )
 
     // ! CloudFlare bypass
@@ -63,12 +66,14 @@ class DisneyPlusProvider : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
+        thashCookie_value = if(thashCookie_value.isEmpty()) bypassThash(mainUrl) else thashCookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
+            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )
-        val document = app.get("$mainUrl/mobile/home", cookies = cookies, interceptor = interceptor).document
+        val document = app.get("$mainUrl/mobile/home", cookies = cookies, headers = mainHeaders, interceptor = interceptor).document
         val items = document.select(".tray-container, #top10").map {
             it.toHomePageList()
         }
@@ -99,8 +104,10 @@ class DisneyPlusProvider : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
+        thashCookie_value = if(thashCookie_value.isEmpty()) bypassThash(mainUrl) else thashCookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
+            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )
@@ -118,8 +125,10 @@ class DisneyPlusProvider : MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         val id = parseJson<Id>(url).id
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
+        thashCookie_value = if(thashCookie_value.isEmpty()) bypassThash(mainUrl) else thashCookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
+            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )
@@ -187,6 +196,7 @@ class DisneyPlusProvider : MainAPI() {
         val episodes = arrayListOf<Episode>()
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
+            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )
@@ -223,6 +233,7 @@ class DisneyPlusProvider : MainAPI() {
         val (title, id) = parseJson<LoadData>(data)
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
+            "t_hash" to thashCookie_value,
             "ott" to "dp",
             "hd" to "on"
         )

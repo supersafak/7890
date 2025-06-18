@@ -123,3 +123,48 @@ suspend fun bypass(mainUrl: String): String {
     }
     return newCookie
 }
+
+suspend fun bypassThash(mainUrl: String): String {
+    // Check persistent storage first
+    val (savedCookie, savedTimestamp) = NetflixMirrorStorage.getTHashCookie()
+
+    // Return cached cookie if valid (≤15 hours old)
+    if (!savedCookie.isNullOrEmpty() && System.currentTimeMillis() - savedTimestamp < 54_000_000) {
+        return savedCookie
+    }
+
+    // Fetch new cookie if expired/missing
+    val newCookie = try {
+        val homePageDocument = app.get("${mainUrl}/mobile/home").document
+        val addHash = homePageDocument.select("body").attr("data-addhash")
+        val time = homePageDocument.select("body").attr("data-time")
+
+        var verificationUrl =
+            "https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json"
+        verificationUrl =
+            app.get(verificationUrl).parsed<VerifyUrl>().nfverifyurl.replace("###", addHash)
+        app.get("$verificationUrl&t=$time")
+
+        var verifyCheck: String
+        var verifyResponse: NiceResponse
+
+        do {
+            delay(1000)
+            val requestBody = FormBody.Builder().add("verify", addHash).build()
+            verifyResponse = app.post("${mainUrl}/mobile/verify2.php", requestBody = requestBody)
+            verifyCheck = verifyResponse.text
+        } while (!verifyCheck.contains("\"statusup\":\"All Done\""))
+
+        verifyResponse.cookies["t_hash"].orEmpty()
+    } catch (e: Exception) {
+        // Clear invalid cookie on failure
+        NetflixMirrorStorage.clearTHashCookie()
+        throw e
+    }
+
+    // Persist the new cookie
+    if (newCookie.isNotEmpty()) {
+        NetflixMirrorStorage.saveTHashCookie(newCookie)
+    }
+    return newCookie
+}
