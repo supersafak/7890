@@ -176,6 +176,8 @@ class SetFilmIzle : MainAPI() {
             "part_key"    to partKey
         )
 
+        Log.d("STF", "formData -> $formData")
+
         val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM).apply {
             formData.forEach { (key, value) -> addFormDataPart(key, value) }
         }.build()
@@ -210,13 +212,31 @@ class SetFilmIzle : MainAPI() {
             if (sourceId == "") return@forEach
             var setKey= "SetPlay"
 
-            val nonce        = Regex("""nonce: '(.*)'""").find(document.html())?.groupValues?.get(1) ?: ""
+            val nonce        = document.selectFirst("div#playex")?.attr("data-nonce") ?: ""
+            Log.d("STF", "nonce -> $nonce")
 
             val multiPart    = sendMultipartRequest(nonce, sourceId, name, partKey, data)
             val sourceBody   = multiPart.body.string()
+            Log.d("STf", "sourceBody -> $sourceBody")
             val sourceIframe = JSONObject(sourceBody).optJSONObject("data")?.optString("url") ?: return@forEach
             Log.d("STF", "iframe » $sourceIframe")
             println("STF iframe » $sourceIframe")
+
+            if (sourceIframe.contains("vctplay.site")) {
+                val vctId = sourceIframe.split("/").last()
+                val masterUrl = "https://vctplay.site/manifests/$vctId/master.txt"
+                callback.invoke(
+                    newExtractorLink(
+                        source = "FastPlay",
+                        name = "FastPlay",
+                        url = masterUrl,
+                        ExtractorLinkType.M3U8
+                    ) {
+                        referer = "https://vctplay.site/"
+                        quality = Qualities.Unknown.value
+                    }
+                )
+            }
 
             if (sourceIframe.contains("explay.store") || sourceIframe.contains("setplay.site")) {
                 loadExtractor("${sourceIframe}?partKey=${partKey}", "${mainUrl}/", subtitleCallback, callback)
