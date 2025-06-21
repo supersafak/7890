@@ -23,7 +23,7 @@ class DisneyPlusProvider : MainAPI() {
         TvType.Movie,
         TvType.TvSeries,
     )
-    override var lang = "ta"
+    override var lang = "en"
 
     override var mainUrl = "https://netfree2.cc"
     override var name = "DisneyPlusMirror"
