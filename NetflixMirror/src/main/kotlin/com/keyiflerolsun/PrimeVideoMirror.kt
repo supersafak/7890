@@ -4,6 +4,8 @@ import com.keyiflerolsun.entities.EpisodesData
 import com.keyiflerolsun.entities.PlayList
 import com.keyiflerolsun.entities.PostData
 import com.keyiflerolsun.entities.SearchData
+import com.keyiflerolsun.entities.MainPage
+import com.keyiflerolsun.entities.PostCategory
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
@@ -17,8 +19,6 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.APIHolder.unixTime
-import com.lagradost.cloudstream3.network.CloudflareKiller
-import org.jsoup.Jsoup
 
 class PrimeVideoMirror : MainAPI() {
     override val supportedTypes = setOf(
@@ -32,33 +32,9 @@ class PrimeVideoMirror : MainAPI() {
 
     override val hasMainPage = true
     private var cookie_value = ""
-    private var thashCookie_value = ""
     private val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest"
     )
-
-    // ! CloudFlare bypass
-    override var sequentialMainPage = true        // * https://recloudstream.github.io/dokka/-cloudstream/com.lagradost.cloudstream3/-main-a-p-i/index.html#-2049735995%2FProperties%2F101969414
-    override var sequentialMainPageDelay       = 50L  // ? 0.05 saniye
-    override var sequentialMainPageScrollDelay = 50L  // ? 0.05 saniye
-
-    // ! CloudFlare v2
-    private val cloudflareKiller by lazy { CloudflareKiller() }
-    private val interceptor      by lazy { CloudflareInterceptor(cloudflareKiller) }
-
-    class CloudflareInterceptor(private val cloudflareKiller: CloudflareKiller): Interceptor {
-        override fun intercept(chain: Interceptor.Chain): Response {
-            val request  = chain.request()
-            val response = chain.proceed(request)
-            val doc      = Jsoup.parse(response.peekBody(1024 * 1024).string())
-
-            if (doc.html().contains("Just a moment") || doc.html().contains("Bir dakika lütfen")) {
-                return cloudflareKiller.intercept(chain)
-            }
-
-            return response
-        }
-    }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
@@ -67,17 +43,23 @@ class PrimeVideoMirror : MainAPI() {
             "ott" to "pv",
             "hd" to "on"
         )
-        val document = app.get("$mainUrl/mobile/home", cookies = cookies, interceptor = interceptor).document
-        val items = document.select(".tray-container, #top10").map {
+        val data = app.get(
+            "$mainUrl/tv/pv/homepage.php",
+            cookies = cookies,
+            referer = "$mainUrl/tv/home",
+        ).parsed<MainPage>()
+
+        val items = data.post.map {
             it.toHomePageList()
         }
+
         return newHomePageResponse(items, false)
     }
 
-    private fun Element.toHomePageList(): HomePageList {
-        val name = select("h2, span").text()
-        val items = select("article, .top10-post").mapNotNull {
-            it.toSearchResult()
+    private fun PostCategory.toHomePageList(): HomePageList {
+        val name = cate
+        val items = ids.split(",").mapNotNull {
+            toSearchResult(it)
         }
         return HomePageList(
             name,
@@ -86,13 +68,10 @@ class PrimeVideoMirror : MainAPI() {
         )
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
-        val id = selectFirst("a")?.attr("data-post") ?: attr("data-post") ?: return null
-        val posterUrl = fixUrlNull(selectFirst(".card-img-container img, img.top10-img-1")?.attr("data-src"))
-
+    private fun toSearchResult(id: String): SearchResponse? {
         return newAnimeSearchResponse("", Id(id).toJson()) {
-            this.posterUrl = posterUrl
-            posterHeaders = mapOf("Referer" to "$mainUrl/")
+            this.posterUrl = "https://img.nfmirrorcdn.top/pv/900/$id.jpg"
+            posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
         }
     }
 
@@ -103,13 +82,13 @@ class PrimeVideoMirror : MainAPI() {
             "ott" to "pv",
             "hd" to "on"
         )
-        val url = "$mainUrl/mobile/pv/search.php?s=$query&t=${APIHolder.unixTime}"
-        val data = app.get(url, referer = "$mainUrl/", cookies = cookies, interceptor = interceptor).parsed<SearchData>()
+        val url = "$mainUrl/pv/search.php?s=$query&t=${APIHolder.unixTime}"
+        val data = app.get(url, referer = "$mainUrl/tv/home", cookies = cookies).parsed<SearchData>()
 
         return data.searchResult.map {
             newAnimeSearchResponse(it.t, Id(it.id).toJson()) {
                 posterUrl = "https://img.nfmirrorcdn.top/pv/900/${it.id}.jpg"
-                posterHeaders = mapOf("Referer" to "$mainUrl/")
+                posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             }
         }
     }
@@ -123,8 +102,11 @@ class PrimeVideoMirror : MainAPI() {
             "hd" to "on"
         )
         val data = app.get(
-            "$mainUrl/mobile/pv/post.php?id=$id&t=${APIHolder.unixTime}", headers, referer = "$mainUrl/", cookies = cookies,
-            interceptor = interceptor).parsed<PostData>()
+            "$mainUrl/pv/post.php?id=$id&t=${APIHolder.unixTime}",
+            headers,
+            referer = "$mainUrl/tv/home",
+            cookies = cookies
+        ).parsed<PostData>()
 
         val episodes = arrayListOf<Episode>()
 
@@ -170,7 +152,7 @@ class PrimeVideoMirror : MainAPI() {
 
         return newTvSeriesLoadResponse(title, url, type, episodes) {
             posterUrl = "https://img.nfmirrorcdn.top/pv/900/$id.jpg"
-            posterHeaders = mapOf("Referer" to "$mainUrl/")
+            posterHeaders = mapOf("Referer" to "$mainUrl/tv/home")
             plot = data.desc
             year = data.year.toIntOrNull()
             tags = genre
@@ -192,11 +174,10 @@ class PrimeVideoMirror : MainAPI() {
         var pg = page
         while (true) {
             val data = app.get(
-                "$mainUrl/mobile/pv/episodes.php?s=$sid&series=$eid&t=${APIHolder.unixTime}&page=$pg",
+                "$mainUrl/pv/episodes.php?s=$sid&series=$eid&t=${APIHolder.unixTime}&page=$pg",
                 headers,
-                referer = "$mainUrl/",
-                cookies = cookies,
-                interceptor = interceptor
+                referer = "$mainUrl/tv/home",
+                cookies = cookies
             ).parsed<EpisodesData>()
             data.episodes?.mapTo(episodes) {
                 newEpisode(LoadData(title, it.id)) {
@@ -226,11 +207,10 @@ class PrimeVideoMirror : MainAPI() {
             "hd" to "on"
         )
         val playlist = app.get(
-            "$mainUrl/mobile/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$mainUrl/tv/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
-            referer = "$mainUrl/",
-            cookies = cookies,
-            interceptor = interceptor
+            referer = "$mainUrl/tv/home",
+            cookies = cookies
         ).parsed<PlayList>()
 
         playlist.forEach { item ->
@@ -242,7 +222,7 @@ class PrimeVideoMirror : MainAPI() {
                         fixUrl(it.file),
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$mainUrl/"
+                        this.referer = "$mainUrl/tv/home"
                         this.quality = getQualityFromName(it.file.substringAfter("q=", ""))
                     }
                 )
