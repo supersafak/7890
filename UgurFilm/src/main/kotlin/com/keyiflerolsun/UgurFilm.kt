@@ -9,24 +9,24 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 
 class UgurFilm : MainAPI() {
-    override var mainUrl              = "https://ugurfilm9.com"
-    override var name                 = "UgurFilm"
-    override val hasMainPage          = true
-    override var lang                 = "tr"
-    override val hasQuickSearch       = false
-    override val supportedTypes       = setOf(TvType.Movie)
+    override var mainUrl             = "https://ugurfilm9.com"
+    override var name                = "UgurFilm"
+    override val hasMainPage         = true
+    override var lang                = "tr"
+    override val hasQuickSearch      = false
+    override val supportedTypes      = setOf(TvType.Movie)
 
     override val mainPage = mainPageOf(
         "${mainUrl}/turkce-altyazili-filmler/page/" to "Türkçe Altyazılı Filmler",
         "${mainUrl}/yerli-filmler/page/"            to "Yerli Filmler",
         "${mainUrl}/en-cok-izlenen-filmler/page/"   to "En Çok İzlenen Filmler",
-        "${mainUrl}/category/kisa-film/page/"       to "Kısa Film",
-        "${mainUrl}/category/aksiyon/page/"         to "Aksiyon",
-        "${mainUrl}/category/bilim-kurgu/page/"     to "Bilim Kurgu",
-        "${mainUrl}/category/belgesel/page/"        to "Belgesel",
-        "${mainUrl}/category/komedi/page/"          to "Komedi",
-        "${mainUrl}/category/kara-film/page/"       to "Kara Film",
-        "${mainUrl}/category/erotik/page/"          to "Erotik",
+        "${mainUrl}/category/kisa-film/page/"      to "Kısa Film",
+        "${mainUrl}/category/aksiyon/page/"        to "Aksiyon",
+        "${mainUrl}/category/bilim-kurgu/page/"    to "Bilim Kurgu",
+        "${mainUrl}/category/belgesel/page/"       to "Belgesel",
+        "${mainUrl}/category/komedi/page/"         to "Komedi",
+        "${mainUrl}/category/kara-film/page/"      to "Kara Film",
+        "${mainUrl}/category/erotik/page/"         to "Erotik",
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
@@ -55,14 +55,16 @@ class UgurFilm : MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
 
-        val title       = document.selectFirst("div.bilgi h2")?.text()?.trim() ?: return null
-        val poster      = fixUrlNull(document.selectFirst("div.resim img")?.attr("src"))
-        val year        = document.selectFirst("a[href*='/yil/']")?.text()?.trim()?.toIntOrNull()
-        val description = document.selectFirst("div.slayt-aciklama")?.text()?.trim()
-        val tags        = document.select("p.tur a[href*='/category/']").map { it.text() }
-        val rating      = document.selectFirst("span.puan")?.text()?.split(" ")?.last()?.toRatingInt()
-        val duration    = document.selectXpath("//span[contains(text(), 'Süre:')]//following-sibling::b").text().split(" ")[0].trim().toIntOrNull()
-        val actors      = document.select("li.oyuncu-k").map {
+        // BAŞLIK SEÇİCİSİ GÜNCELLENDİ: Daha önce 'h2' idi, şimdi 'h1'.
+        val title          = document.selectFirst("div.bilgi h1")?.text()?.trim() ?: return null
+        val poster         = fixUrlNull(document.selectFirst("div.resim img")?.attr("src"))
+        val year           = document.selectFirst("a[href*='/yil/']")?.text()?.trim()?.toIntOrNull()
+        val description    = document.selectFirst("div.slayt-aciklama")?.text()?.trim()
+        val tags           = document.select("p.tur a[href*='/category/']").map { it.text() }
+        val rating         = document.selectFirst("span.puan")?.text()?.split(" ")?.last()?.toRatingInt()
+        // SÜRE SEÇİCİSİ GÜNCELLENDİ: XPath yerine daha kararlı bir CSS seçicisi kullanıldı.
+        val duration       = document.selectFirst("p:contains(Süre:) b")?.text()?.split(" ")?.firstOrNull()?.trim()?.toIntOrNull()
+        val actors         = document.select("li.oyuncu-k").map {
             Actor(it.selectFirst("span")!!.text(), it.selectFirst("img")?.attr("src"))
         }
 
@@ -89,6 +91,11 @@ class UgurFilm : MainAPI() {
             Log.d("UGF", "iframe » $iframe")
 
             if (iframe.contains(mainUrl)) {
+                // KAYNAK SEÇİCİSİ VE AJAX YANITI KONTROLÜ GEREKLİ!
+                // Eğer hata hala devam ediyorsa, bu bölümdeki seçicinin veya AjaxSource yapısının değiştiğini gösterir.
+                // Lütfen önceki açıklamalarda belirttiğim gibi ugurfilm9.com/player/play.php?vid=... URL'sini tarayıcınızda açıp
+                // Geliştirici Araçları (F12) ile "Elements" ve "Network" sekmelerini kontrol edin.
+                // li.c-dropdown__item hala doğru mu?
                 val kaynaklar = app.get(iframe, referer=data).document.select("li.c-dropdown__item").associate { kaynak ->
                     kaynak.attr("data-dropdown-value") to kaynak.attr("data-order-value")
                 }
