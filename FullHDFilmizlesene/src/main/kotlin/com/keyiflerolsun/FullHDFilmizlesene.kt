@@ -43,7 +43,6 @@ class FullHDFilmizlesene : MainAPI() {
         "${mainUrl}/filmizle/gizem-filmleri-izle/"              to "Gizem Filmleri",
         "${mainUrl}/filmizle/hint-filmler-fh-hd-izle/"          to "Hint Filmleri",
         "${mainUrl}/filmizle/komedi-filmleri-izle-2/"           to "Komedi Filmleri",
-        "${mainUrl}/filmizle/korku-filmleri-izle-2/"            to "Korku Filmleri",
         "${mainUrl}/filmizle/macera-filmleri-izle-1/"           to "Macera Filmleri",
         "${mainUrl}/filmizle/muzikal-filmleri-izle/"            to "Müzikal Filmler",
         "${mainUrl}/filmizle/polisiye-filmleri-izle-1/"         to "Polisiye Filmleri",
