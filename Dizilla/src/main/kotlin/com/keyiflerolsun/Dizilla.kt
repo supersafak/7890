@@ -106,9 +106,9 @@ class Dizilla : MainAPI() {
         return newHomePageResponse(request.name, home)
     }
 
-    private fun Element.diziler(): SearchResponse {
-        val title = this.selectFirst("span.font-normal")?.text() ?: "return null"
-        val href = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: "return null"
+    private fun Element.diziler(): SearchResponse? {
+        val title = this.selectFirst("span.font-normal")?.text() ?: return null
+        val href = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
 
         return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
@@ -116,9 +116,9 @@ class Dizilla : MainAPI() {
         }
     }
 
-    private fun Element.yeniEklenenler(): SearchResponse {
-        val title = this.selectFirst("h2")?.text() ?: "return null"
-        val href = fixUrlNull(this.attr("href")) ?: "return null"
+    private fun Element.yeniEklenenler(): SearchResponse? {
+        val title = this.selectFirst("h2")?.text() ?: return null
+        val href = fixUrlNull(this.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
 
         return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
