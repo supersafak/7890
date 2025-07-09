@@ -347,42 +347,5 @@ class HDFilmCehennemi : MainAPI() {
         @JsonProperty("canonical") val canonical: Boolean,
         @JsonProperty("keywords") val keywords: Boolean
     )
-
-    private data class MovieSchema(
-        @JsonProperty("@type") val type: String? = null,
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("image") val image: String? = null,
-        @JsonProperty("description") val description: String? = null,
-        @JsonProperty("datePublished") val datePublished: String? = null,
-        @JsonProperty("duration") val StringDuration: String? = null,
-        @JsonProperty("actor") val actor: List<ActorSchema>? = null,
-        @JsonProperty("aggregateRating") val aggregateRating: AggregateRatingSchema? = null,
-        @JsonProperty("director") val director: DirectorSchema? = null
-    )
-
-    private data class TrailerSchema(
-        @JsonProperty("@type") val type: String? = null,
-        @JsonProperty("embedUrl") val embedUrl: String? = null,
-        @JsonProperty("name") val name: String? = null,
-        @JsonProperty("description") val description: String? = null,
-        @JsonProperty("thumbnailUrl") val thumbnailUrl: String? = null
-    )
-
-    private data class ActorSchema(
-        @JsonProperty("@type") val type: String? = null,
-        @JsonProperty("name") val name: String? = null
-    )
-
-    private data class DirectorSchema(
-        @JsonProperty("@type") val type: String? = null,
-        @JsonProperty("name") val name: String? = null
-    )
-
-    private data class AggregateRatingSchema(
-        @JsonProperty("@type") val type: String? = null,
-        @JsonProperty("ratingValue") val ratingValue: String? = null,
-        @JsonProperty("bestRating") val bestRating: String? = null,
-        @JsonProperty("worstRating") val worstRating: String? = null,
-        @JsonProperty("ratingCount") val ratingCount: String? = null
-    )
 }
+    
