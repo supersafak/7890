@@ -43,25 +43,25 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
 class HDFilmCehennemi : MainAPI() {
-    override var mainUrl              = "https://www.hdfilmcehennemi.nl"
-    override var name                 = "HDFilmCehennemi"
-    override val hasMainPage          = true
-    override var lang                 = "tr"
-    override val hasQuickSearch       = true
-    override val supportedTypes       = setOf(TvType.Movie, TvType.TvSeries)
+    override var mainUrl = "https://www.hdfilmcehennemi.nl"
+    override var name = "HDFilmCehennemi"
+    override val hasMainPage = true
+    override var lang = "tr"
+    override val hasQuickSearch = true
+    override val supportedTypes = setOf(TvType.Movie, TvType.TvSeries)
 
     override var sequentialMainPage = true
-    override var sequentialMainPageDelay       = 200L 
-    override var sequentialMainPageScrollDelay = 200L  
+    override var sequentialMainPageDelay = 200L
+    override var sequentialMainPageScrollDelay = 200L
 
     private val cloudflareKiller by lazy { CloudflareKiller() }
-    private val interceptor      by lazy { CloudflareInterceptor(cloudflareKiller) }
+    private val interceptor by lazy { CloudflareInterceptor(cloudflareKiller) }
 
-    class CloudflareInterceptor(private val cloudflareKiller: CloudflareKiller): Interceptor {
+    class CloudflareInterceptor(private val cloudflareKiller: CloudflareKiller) : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
-            val request  = chain.request()
+            val request = chain.request()
             val response = chain.proceed(request)
-            val doc      = Jsoup.parse(response.peekBody(1024 * 1024).string())
+            val doc = Jsoup.parse(response.peekBody(1024 * 1024).string())
 
             val titleText = doc.select("title").text()
             if (titleText.contains("Just a moment...") ||
@@ -76,23 +76,23 @@ class HDFilmCehennemi : MainAPI() {
     }
 
     override val mainPage = mainPageOf(
-        "${mainUrl}/load/page/sayfano/home/"                                       to "Yeni Eklenen Filmler",
-        "${mainUrl}/load/page/sayfano/categories/nette-ilk-filmler/"               to "Nette İlk Filmler",
-        "${mainUrl}/load/page/sayfano/home-series/"                                to "Yeni Eklenen Diziler",
-        "${mainUrl}/load/page/sayfano/categories/tavsiye-filmler-izle2/"           to "Tavsiye Filmler",
-        "${mainUrl}/load/page/sayfano/imdb7/"                                      to "IMDB 7+ Filmler",
-        "${mainUrl}/load/page/sayfano/mostCommented/"                              to "En Çok Yorumlananlar",
-        "${mainUrl}/load/page/sayfano/mostLiked/"                                  to "En Çok Beğenilenler",
-        "${mainUrl}/load/page/sayfano/genres/aile-filmleri-izleyin-6/"             to "Aile Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/aksiyon-filmleri-izleyin-5/"          to "Aksiyon Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/animasyon-filmlerini-izle-5/"      to "Animasyon Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/belgesel-filmlerini-izle-1/"          to "Belgesel Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/bilim-kurgu-filmlerini-izleyin-3/"    to "Bilim Kurgu Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/komedi-filmlerini-izleyin-1/"         to "Komedi Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/korku-filmlerini-izle-4/"             to "Korku Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/romantik-filmleri-izle-2/"            to "Romantik Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/suc-filmleri-izle-3/"                 to "Suç Filmleri",
-        "${mainUrl}/load/page/sayfano/genres/tarih-filmleri-izle-4/"               to "Tarih Filmleri"
+        "${mainUrl}/load/page/sayfano/home/" to "Yeni Eklenen Filmler",
+        "${mainUrl}/load/page/sayfano/categories/nette-ilk-filmler/" to "Nette İlk Filmler",
+        "${mainUrl}/load/page/sayfano/home-series/" to "Yeni Eklenen Diziler",
+        "${mainUrl}/load/page/sayfano/categories/tavsiye-filmler-izle2/" to "Tavsiye Filmler",
+        "${mainUrl}/load/page/sayfano/imdb7/" to "IMDB 7+ Filmler",
+        "${mainUrl}/load/page/sayfano/mostCommented/" to "En Çok Yorumlananlar",
+        "${mainUrl}/load/page/sayfano/mostLiked/" to "En Çok Beğenilenler",
+        "${mainUrl}/load/page/sayfano/genres/aile-filmleri-izleyin-6/" to "Aile Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/aksiyon-filmleri-izleyin-5/" to "Aksiyon Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/animasyon-filmlerini-izle-5/" to "Animasyon Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/belgesel-filmlerini-izle-1/" to "Belgesel Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/bilim-kurgu-filmlerini-izleyin-3/" to "Bilim Kurgu Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/komedi-filmlerini-izleyin-1/" to "Komedi Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/korku-filmlerini-izle-4/" to "Korku Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/romantik-filmleri-izle-2/" to "Romantik Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/suc-filmleri-izle-3/" to "Suç Filmleri",
+        "${mainUrl}/load/page/sayfano/genres/tarih-filmleri-izle-4/" to "Tarih Filmleri"
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
@@ -105,7 +105,7 @@ class HDFilmCehennemi : MainAPI() {
             "Accept" to "*/*", "X-Requested-With" to "fetch"
         )
         val doc = app.get(url, headers = headers, referer = mainUrl, interceptor = interceptor)
-        
+
         val home: List<SearchResponse>?
         if (!doc.toString().contains("Sayfa Bulunamadı")) {
             val hdfcData = objectMapper.readValue<HDFC>(doc.toString())
@@ -132,7 +132,7 @@ class HDFilmCehennemi : MainAPI() {
             "${mainUrl}/search?q=${query}",
             headers = mapOf("X-Requested-With" to "fetch")
         ).parsedSafe<Results>() ?: return emptyList()
-        
+
         val searchResults = mutableListOf<SearchResponse>()
 
         response.results.forEach { resultHtml ->
@@ -314,10 +314,10 @@ class HDFilmCehennemi : MainAPI() {
     }
     
     private data class SubSource(
-        @JsonProperty("file")    val file: String?  = null,
-        @JsonProperty("label")   val label: String? = null,
-        @JsonProperty("language") val language: String? = null,
-        @JsonProperty("kind")    val kind: String?  = null
+        @JsonProperty("file")    val file: String?,
+        @JsonProperty("label")   val label: String?,
+        @JsonProperty("language") val language: String?,
+        @JsonProperty("kind")    val kind: String?
     )
 
     data class Results(
