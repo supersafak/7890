@@ -153,31 +153,17 @@ class HDFilmCehennemi : MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url, interceptor = interceptor).document
 
-        val schemaScript = document.selectFirst("script[type=application/ld+json]")
-        val schemaJson = schemaScript?.data()
-
-        val parsedSchema: MovieSchema? = if (!schemaJson.isNullOrEmpty()) {
-            try {
-                objectMapper.readValue<MovieSchema>(schemaJson)
-            } catch (e: Exception) {
-                Log.e("HDFilmCehennemi", "Error parsing schema: ${e.message}", e)
-                null
-            }
-        } else null
-
-        val title = parsedSchema?.name ?: document.selectFirst("h1.section-title")?.text()?.substringBefore(" izle")?.trim() ?: ""
-        val poster = fixUrlNull(parsedSchema?.image) ?: fixUrlNull(document.select("aside.post-info-poster img.lazyload").lastOrNull()?.attr("data-src"))
-        val description = parsedSchema?.description ?: document.selectFirst("article.post-info-content > p")?.text()?.trim()
-        val tags = parsedSchema?.genre ?: document.select("div.post-info-genres a").map { it.text() }
-        val year = parsedSchema?.datePublished?.substringBefore("-")?.toIntOrNull() ?: document.selectFirst("div.post-info-year-country a")?.text()?.trim()?.toIntOrNull()
-        val duration = parsedSchema?.StringDuration?.let { Regex("""PT(\d+)M""").find(it)?.groupValues?.get(1)?.toIntOrNull() }
-        val rating = parsedSchema?.aggregateRating?.ratingValue?.toRatingInt() ?: document.selectFirst("div.post-info-imdb-rating span")?.text()?.substringBefore("(")?.trim()?.toRatingInt()
-        val actors = parsedSchema?.actor?.mapNotNull { it.name?.trim() }?.map { Actor(it) } ?: document.select("div.post-info-cast a").map {
+        val title = document.selectFirst("h1.section-title")?.text()?.substringBefore(" izle")?.trim() ?: ""
+        val poster = fixUrlNull(document.select("aside.post-info-poster img.lazyload").lastOrNull()?.attr("data-src"))
+        val tags = document.select("div.post-info-genres a").map { it.text() }
+        val year = document.selectFirst("div.post-info-year-country a")?.text()?.trim()?.toIntOrNull()
+        val tvType = if (document.select("div.seasons").isEmpty()) TvType.Movie else TvType.TvSeries
+        val description = document.selectFirst("article.post-info-content > p")?.text()?.trim()
+        val rating = document.selectFirst("div.post-info-imdb-rating span")?.text()?.substringBefore("(")?.trim()?.toRatingInt()
+        val actors = document.select("div.post-info-cast a").map {
             Actor(it.selectFirst("strong")!!.text(), it.select("img").attr("data-src"))
         }
-        val trailer = fixUrlNull(parsedSchema?.trailer?.embedUrl) ?: document.selectFirst("div.post-info-trailer button")?.attr("data-modal")?.substringAfter("trailer/", "")?.let { if (it.isNotEmpty()) "https://www.youtube.com/watch?v=$it" else null }
-
-        val tvType = if (document.select("div.seasons").isEmpty()) TvType.Movie else TvType.TvSeries
+        val trailer = document.selectFirst("div.post-info-trailer button")?.attr("data-modal")?.substringAfter("trailer/", "")?.let { if (it.isNotEmpty()) "https://www.youtube.com/watch?v=$it" else null }
 
         val recommendations = document.select("div.section-slider-container div.slider-slide").mapNotNull {
             val recName = it.selectFirst("a")?.attr("title") ?: return@mapNotNull null
@@ -348,4 +334,3 @@ class HDFilmCehennemi : MainAPI() {
         @JsonProperty("keywords") val keywords: Boolean
     )
 }
-    
