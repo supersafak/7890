@@ -380,4 +380,9 @@ class HDFilmCehennemi : MainAPI() {
 
     private data class AggregateRatingSchema(
         @JsonProperty("@type") val type: String? = null,
-        @JsonProperty("ratingValue") val ratingValue:
+        @JsonProperty("ratingValue") val ratingValue: String? = null,
+        @JsonProperty("bestRating") val bestRating: String? = null,
+        @JsonProperty("worstRating") val worstRating: String? = null,
+        @JsonProperty("ratingCount") val ratingCount: String? = null
+    )
+}
