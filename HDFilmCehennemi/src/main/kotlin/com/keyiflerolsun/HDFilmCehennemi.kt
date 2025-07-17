@@ -256,7 +256,7 @@ class HDFilmCehennemi : MainAPI() {
         val videoData = getAndUnpack(script).substringAfter("file_link=\"").substringBefore("\";")
         Log.d("HDCH", "videoData » $videoData")
         val base64Input = videoData.substringAfter("dc_hello(\"").substringBefore("\");")
-        val lastUrl = dcHello(base64Input)
+        val lastUrl = dcHello(base64Input).removePrefix("-")
         callback.invoke(
             newExtractorLink(
                 source = source,
