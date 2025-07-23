@@ -22,7 +22,6 @@ import com.lagradost.cloudstream3.mainPageOf
 import com.lagradost.cloudstream3.newHomePageResponse
 import com.lagradost.cloudstream3.newMovieLoadResponse
 import com.lagradost.cloudstream3.newMovieSearchResponse
-import com.lagradost.cloudstream3.toRatingInt
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.Qualities
@@ -69,7 +68,7 @@ class XPrime : MainAPI() {
         var url =
             "${mainUrl}/discover/movie?api_key=$apiKey&page=${page}&include_adult=false&with_watch_monetization_types=flatrate%7Cfree%7Cads&watch_region=TR&language=tr-TR&with_genres=${request.data}&sort_by=popularity.desc"
         if (request.name == "Popüler" || request.name == "Sinemalarda") {
-           url = request.data.replace("SAYFA", page.toString())
+            url = request.data.replace("SAYFA", page.toString())
         }
         Log.d("XPR", "URL -> $url")
         val movies = app.get(url).parsedSafe<MovieResponse>()
@@ -83,8 +82,12 @@ class XPrime : MainAPI() {
         val title = this.title.toString()
         val href = this.id.toString()
         val posterUrl = imgUrl + this.posterPath
+        val score = this.vote
 
-        return newMovieSearchResponse(title, href, TvType.Movie) { this.posterUrl = posterUrl }
+        return newMovieSearchResponse(title, href, TvType.Movie) {
+            this.posterUrl = posterUrl
+            this.score = Score.from10(score)
+        }
 
     }
 
@@ -176,7 +179,7 @@ class XPrime : MainAPI() {
             )
         }
         val serversUrl = "https://backend.xprime.tv/servers"
-        val servers    = app.get(serversUrl).parsedSafe<Servers>()
+        val servers = app.get(serversUrl).parsedSafe<Servers>()
         servers?.servers?.forEach {
             try {
                 loadServers(it, id, movie, callback, subtitleCallback)
@@ -202,7 +205,8 @@ class XPrime : MainAPI() {
         val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         if (server.name == "primebox" && server.status == "ok") {
-            val url = "$backendUrl/primebox?name=$movieName&year=$year&fallback_year=${year?.minus(1)}"
+            val url =
+                "$backendUrl/primebox?name=$movieName&year=$year&fallback_year=${year?.minus(1)}"
             val document = app.get(url)
             val streamText = document.text
             val stream: Stream = objectMapper.readValue(streamText)
@@ -215,7 +219,7 @@ class XPrime : MainAPI() {
                         url = source,
                         ExtractorLinkType.VIDEO
                     ) {
-                        this. quality = getQualityFromName(it)
+                        this.quality = getQualityFromName(it)
                         this.headers = mapOf("Origin" to mainUrl)
                         this.referer = xUrl
                     }

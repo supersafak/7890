@@ -23,12 +23,9 @@ import com.lagradost.cloudstream3.newMovieLoadResponse
 import com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.newTvSeriesLoadResponse
 import com.lagradost.cloudstream3.newTvSeriesSearchResponse
-import com.lagradost.cloudstream3.toRatingInt
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.Qualities
-import com.lagradost.cloudstream3.utils.fixUrl
-import com.lagradost.cloudstream3.utils.getQualityFromName
 import com.lagradost.cloudstream3.utils.loadExtractor
 import com.lagradost.cloudstream3.utils.newExtractorLink
 import org.jsoup.nodes.Element
@@ -68,7 +65,8 @@ class HDFilmCehennemi2 : MainAPI() {
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val document = app.get("${request.data}page/${page}").document
         if (request.name == "Yeni Eklenenler") {
-            val home = document.select("div.tab-content div.poster").mapNotNull { it.toMainPageResult() }
+            val home =
+                document.select("div.tab-content div.poster").mapNotNull { it.toMainPageResult() }
             return newHomePageResponse(request.name, home)
         }
         val home = document.select("div.poster").mapNotNull { it.toMainPageResult() }
@@ -80,13 +78,18 @@ class HDFilmCehennemi2 : MainAPI() {
         val title = this.selectFirst("div.poster-title h2")?.text()?.replace(" izle", "") ?: ""
         val href = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: ""
         val posterUrl = fixUrlNull(this.selectFirst("div.poster-image img")?.attr("data-src"))
+        val score = this.selectFirst("span.bg-warning")?.text()?.trim()
 
         if (href.contains("/dizi/")) {
             return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
                 this.posterUrl = posterUrl
+                this.score = Score.from10(score)
             }
         } else {
-            return newMovieSearchResponse(title, href, TvType.Movie) { this.posterUrl = posterUrl }
+            return newMovieSearchResponse(title, href, TvType.Movie) {
+                this.posterUrl = posterUrl
+                this.score = Score.from10(score)
+            }
         }
     }
 
@@ -288,7 +291,12 @@ class HDFilmCehennemi2 : MainAPI() {
         return true
     }
 
-    suspend fun vidloadExtract(iframe: String, name: String, callback: (ExtractorLink) -> Unit, subtitleCallback: (SubtitleFile) -> Unit) {
+    suspend fun vidloadExtract(
+        iframe: String,
+        name: String,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit
+    ) {
         Log.d("HDC", "vidloadExtract » $iframe")
         if (iframe.contains("vidload")) {
             //val url = iframe.replace("/iframe/", "/ajax/")
@@ -311,8 +319,11 @@ class HDFilmCehennemi2 : MainAPI() {
                     this.quality = Qualities.Unknown.value
                 }
             )
-            val script = doc.select("script").find { it.data().contains("player.addRemoteTextTrack") }?.data() ?: ""
-            val regex = Regex("""src:\s*'([^']*)'.*?label:\s*'([^']*)'""", RegexOption.DOT_MATCHES_ALL)
+            val script =
+                doc.select("script").find { it.data().contains("player.addRemoteTextTrack") }
+                    ?.data() ?: ""
+            val regex =
+                Regex("""src:\s*'([^']*)'.*?label:\s*'([^']*)'""", RegexOption.DOT_MATCHES_ALL)
             val matches = regex.findAll(script)
             for (match in matches) {
                 val src = match.groupValues[1]

@@ -100,9 +100,11 @@ class YabanciDizi : MainAPI() {
         val title = this.selectFirst("div.mofy-movbox-text a")?.text()?.trim() ?: return null
         val href = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("data-src"))
+        val score = this.selectFirst("div.mofy-movpoint span")?.text()?.trim()
 
         return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
             this.posterUrl = posterUrl
+            this.score = Score.from10(score)
         }
     }
 

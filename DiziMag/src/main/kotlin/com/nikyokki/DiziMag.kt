@@ -99,14 +99,17 @@ class DiziMag : MainAPI() {
                 ?: return null
         val posterUrl =
             fixUrlNull(this.selectFirst("div.poster-long-image img")?.attr("data-src"))
+        val score = this.selectFirst("span.rating")?.text()?.trim()
 
         return if (href.contains("/dizi/")) {
             newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
                 this.posterUrl = posterUrl
+                this.score = Score.from10(score)
             }
         } else {
             newMovieSearchResponse(title, href, TvType.Movie) {
                 this.posterUrl = posterUrl
+                this.score = Score.from10(score)
             }
         }
     }

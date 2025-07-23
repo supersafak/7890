@@ -3,50 +3,68 @@
 package com.keyiflerolsun
 
 import android.util.Log
-import org.jsoup.nodes.Element
-import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.Actor
+import com.lagradost.cloudstream3.HomePageResponse
+import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
+import com.lagradost.cloudstream3.MainAPI
+import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
+import com.lagradost.cloudstream3.SearchResponse
+import com.lagradost.cloudstream3.SubtitleFile
+import com.lagradost.cloudstream3.TvType
+import com.lagradost.cloudstream3.app
+import com.lagradost.cloudstream3.fixUrlNull
+import com.lagradost.cloudstream3.mainPageOf
+import com.lagradost.cloudstream3.newHomePageResponse
+import com.lagradost.cloudstream3.newMovieLoadResponse
+import com.lagradost.cloudstream3.newMovieSearchResponse
+import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.ExtractorLinkType
+import com.lagradost.cloudstream3.utils.Qualities
+import com.lagradost.cloudstream3.utils.loadExtractor
+import com.lagradost.cloudstream3.utils.newExtractorLink
+import org.jsoup.nodes.Element
 
 class SuperFilmGeldi : MainAPI() {
-    override var mainUrl              = "https://www.superfilmgeldi2.art"
-    override var name                 = "SuperFilmGeldi"
-    override val hasMainPage          = true
-    override var lang                 = "tr"
-    override val hasQuickSearch       = false
-    override val supportedTypes       = setOf(TvType.Movie)
+    override var mainUrl = "https://www.superfilmgeldi2.art"
+    override var name = "SuperFilmGeldi"
+    override val hasMainPage = true
+    override var lang = "tr"
+    override val hasQuickSearch = false
+    override val supportedTypes = setOf(TvType.Movie)
 
     override val mainPage = mainPageOf(
-        "${mainUrl}/page/"                                        to "Son Eklenenler",
-        "${mainUrl}/hdizle/category/aksiyon/page/"                to "Aksiyon",
-        "${mainUrl}/hdizle/category/animasyon/page/"              to "Animasyon",
-        "${mainUrl}/hdizle/category/belgesel/page/"               to "Belgesel",
-        "${mainUrl}/hdizle/category/bilim-kurgu/page/"            to "Bilim Kurgu",
-        "${mainUrl}/hdizle/category/fantastik/page/"              to "Fantastik",
-        "${mainUrl}/hdizle/category/komedi-filmleri/page/"        to "Komedi Filmleri",
-        "${mainUrl}/hdizle/category/macera/page/"                 to "Macera",
-        "${mainUrl}/hdizle/category/gerilim/page/"                to "Gerilim",
-        "${mainUrl}/hdizle/category/suc/page/"                    to "Suç",
-        "${mainUrl}/hdizle/category/karete-filmleri/page/"        to "Karate Filmleri",
-        "${mainUrl}/hdizle/category/yesilcam-erotik-izle/page/"   to "Yeşilçam Erotik",
+        "${mainUrl}/page/" to "Son Eklenenler",
+        "${mainUrl}/hdizle/category/aksiyon/page/" to "Aksiyon",
+        "${mainUrl}/hdizle/category/animasyon/page/" to "Animasyon",
+        "${mainUrl}/hdizle/category/belgesel/page/" to "Belgesel",
+        "${mainUrl}/hdizle/category/bilim-kurgu/page/" to "Bilim Kurgu",
+        "${mainUrl}/hdizle/category/fantastik/page/" to "Fantastik",
+        "${mainUrl}/hdizle/category/komedi-filmleri/page/" to "Komedi Filmleri",
+        "${mainUrl}/hdizle/category/macera/page/" to "Macera",
+        "${mainUrl}/hdizle/category/gerilim/page/" to "Gerilim",
+        "${mainUrl}/hdizle/category/suc/page/" to "Suç",
+        "${mainUrl}/hdizle/category/karete-filmleri/page/" to "Karate Filmleri",
+        "${mainUrl}/hdizle/category/yesilcam-erotik-izle/page/" to "Yeşilçam Erotik",
         "${mainUrl}/hdizle/category/hd-erotik-filmler-izle/page/" to "Erotik Filmler"
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val document = app.get("${request.data}${page}").document
-        val home     = document.select("div.movie-preview-content").mapNotNull { it.toSearchResult() }
+        val home = document.select("div.movie-preview-content").mapNotNull { it.toSearchResult() }
 
         return newHomePageResponse(request.name, home)
     }
 
     private fun removeUnnecessarySuffixes(title: String): String {
         val unnecessarySuffixes = listOf(
-            " izle", 
-            " full film", 
+            " izle",
+            " full film",
             " filmini full",
             " full türkçe",
-            " alt yazılı", 
-            " altyazılı", 
+            " alt yazılı",
+            " altyazılı",
             " tr dublaj",
             " hd türkçe",
             " türkçe dublaj",
@@ -67,11 +85,16 @@ class SuperFilmGeldi : MainAPI() {
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title     = this.selectFirst("span.movie-title a")?.text()?.substringBefore(" izle") ?: return null
-        val href      = fixUrlNull(this.selectFirst("span.movie-title a")?.attr("href")) ?: return null
+        val title =
+            this.selectFirst("span.movie-title a")?.text()?.substringBefore(" izle") ?: return null
+        val href = fixUrlNull(this.selectFirst("span.movie-title a")?.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        val score = this.selectFirst("span.imdb")?.text()?.split(" ")?.get(0)?.trim()
 
-        return newMovieSearchResponse(removeUnnecessarySuffixes(title), href, TvType.Movie) { this.posterUrl = posterUrl }
+        return newMovieSearchResponse(removeUnnecessarySuffixes(title), href, TvType.Movie) {
+            this.posterUrl = posterUrl
+            this.score = Score.from10(score)
+        }
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
@@ -85,37 +108,47 @@ class SuperFilmGeldi : MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
 
-        val title           = document.selectFirst("div.title h1")?.text()?.trim()?.substringBefore(" izle") ?: return null
-        val poster          = fixUrlNull(document.selectFirst("div.poster img")?.attr("src"))
-        val year            = document.selectFirst("div.release a")?.text()?.toIntOrNull()
-        val description     = document.selectFirst("div.excerpt p")?.text()?.trim()
-        val tags            = document.select("div.categories a").map { it.text() }
-        val rating          = document.selectFirst("span.imdb-rating")?.text()?.trim()?.split(" ")?.first()
-        val recommendations = document.select("div.film-content div.existing_item").mapNotNull { it.toSearchResult() }
-        val actors          = document.select("div.actor a").map {
+        val title = document.selectFirst("div.title h1")?.text()?.trim()?.substringBefore(" izle")
+            ?: return null
+        val poster = fixUrlNull(document.selectFirst("div.poster img")?.attr("src"))
+        val year = document.selectFirst("div.release a")?.text()?.toIntOrNull()
+        val description = document.selectFirst("div.excerpt p")?.text()?.trim()
+        val tags = document.select("div.categories a").map { it.text() }
+        val rating = document.selectFirst("span.imdb-rating")?.text()?.trim()?.split(" ")?.first()
+        val recommendations =
+            document.select("div.film-content div.existing_item").mapNotNull { it.toSearchResult() }
+        val actors = document.select("div.actor a").map {
             Actor(it.text())
         }
 
         return newMovieLoadResponse(removeUnnecessarySuffixes(title), url, TvType.Movie, url) {
-            this.posterUrl       = poster
-            this.year            = year
-            this.plot            = description
-            this.tags            = tags
-            this.score           = Score.from10(rating)
+            this.posterUrl = poster
+            this.year = year
+            this.plot = description
+            this.tags = tags
+            this.score = Score.from10(rating)
             this.recommendations = recommendations
             addActors(actors)
         }
     }
 
-    override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
         Log.d("SFG", "data » $data")
         val document = app.get(data).document
-        val iframe   = fixUrlNull(document.selectFirst("div#vast iframe")?.attr("src")) ?: return false
+        val iframe =
+            fixUrlNull(document.selectFirst("div#vast iframe")?.attr("src")) ?: return false
         Log.d("SFG", "iframe » $iframe")
 
         if (iframe.contains("mix") and iframe.contains("index.php?data=")) {
-            val iSource  = app.get(iframe, referer="${mainUrl}/").text
-            val mixPoint = Regex("""videoUrl":"(.*)","videoServer""").find(iSource)?.groupValues?.get(1)?.replace("\\", "") ?: return false
+            val iSource = app.get(iframe, referer = "${mainUrl}/").text
+            val mixPoint =
+                Regex("""videoUrl":"(.*)","videoServer""").find(iSource)?.groupValues?.get(1)
+                    ?.replace("\\", "") ?: return false
 
             var endPoint = "?s=0&d="
 
@@ -130,9 +163,9 @@ class SuperFilmGeldi : MainAPI() {
 
             callback.invoke(
                 newExtractorLink(
-                    source  = this.name,
-                    name    = this.name,
-                    url     = m3uLink,
+                    source = this.name,
+                    name = this.name,
+                    url = m3uLink,
                     ExtractorLinkType.M3U8
                 ) {
                     this.referer = iframe

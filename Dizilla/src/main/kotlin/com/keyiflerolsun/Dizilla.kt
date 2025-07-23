@@ -111,9 +111,11 @@ class Dizilla : MainAPI() {
         val title = this.selectFirst("span.font-normal")?.text() ?: return null
         val href = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        val score = this.selectFirst("h4")?.text()?.trim()
 
         return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
             this.posterUrl = posterUrl
+            this.score = Score.from10(score)
         }
     }
 
@@ -121,9 +123,11 @@ class Dizilla : MainAPI() {
         val title = this.selectFirst("h2")?.text() ?: return null
         val href = fixUrlNull(this.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        val score = this.selectFirst("h4")?.text()?.trim()
 
         return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
             this.posterUrl = posterUrl
+            this.score = Score.from10(score)
         }
     }
     private suspend fun Element.sonBolumler(): SearchResponse {

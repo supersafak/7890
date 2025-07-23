@@ -93,9 +93,11 @@ class DiziGom : MainAPI() {
         val title = this.selectFirst("div.serie-name a")?.text() ?: return null
         val href = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        val score = this.selectFirst("div.episode-date")?.text()?.replace("IMDb:", "")?.trim()
 
         return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
             this.posterUrl = posterUrl
+            this.score     = Score.from10(score)
         }
     }
 
