@@ -82,13 +82,21 @@ class `4KFilmIzlesene` : MainAPI() {
     private fun Element.toMainPageResult(): SearchResponse? {
         val title     = this.selectFirst("div.name")?.text() ?: return null
         val href      = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null
+        var score     = this.selectFirst("div.rating span")?.text()
+        if (score == null) {
+            score =  this.selectFirst("span.icon-star")?.text()?.trim()
+        }
         if (this.selectFirst("div.img img")?.attr("data-lazy-src") == "" ||
             this.selectFirst("div.img img")?.attr("data-lazy-src") == null) {
             val posterUrl = fixUrlNull(this.selectFirst("div.img img")?.attr("src"))
-            return newMovieSearchResponse(title, href, TvType.Movie) { this.posterUrl = posterUrl }
+            return newMovieSearchResponse(title, href, TvType.Movie) { this.posterUrl = posterUrl
+                this.score = Score.from10(score)
+            }
         } else {
             val posterUrl = fixUrlNull(this.selectFirst("div.img img")?.attr("data-lazy-src"))
-            return newMovieSearchResponse(title, href, TvType.Movie) { this.posterUrl = posterUrl }
+            return newMovieSearchResponse(title, href, TvType.Movie) {
+                this.posterUrl = posterUrl
+                this.score = Score.from10(score)}
         }
     }
 
