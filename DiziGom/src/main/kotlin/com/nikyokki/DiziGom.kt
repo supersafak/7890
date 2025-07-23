@@ -13,17 +13,18 @@ import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.fixUrlNull
 import com.lagradost.cloudstream3.mainPageOf
+import com.lagradost.cloudstream3.newEpisode
 import com.lagradost.cloudstream3.newHomePageResponse
 import com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.newTvSeriesLoadResponse
 import com.lagradost.cloudstream3.newTvSeriesSearchResponse
-import com.lagradost.cloudstream3.toRatingInt
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.JsUnpacker
@@ -86,7 +87,6 @@ class DiziGom : MainAPI() {
         }
 
 
-
     }
 
     private fun Element.toMainPageResult(): SearchResponse? {
@@ -129,7 +129,7 @@ class DiziGom : MainAPI() {
         val description = document.selectFirst("div.serieDescription p")?.text()?.trim()
         val year = document.selectFirst("div.airDateYear a")?.text()?.trim()?.toIntOrNull()
         val tags = document.select("div.genreList a").map { it.text() }
-        val rating = document.selectFirst("div.score")?.text()?.trim()?.toRatingInt()
+        val rating = document.selectFirst("div.score")?.text()?.trim()
         val duration = document.select("div.serieMetaInformation").select("div.totalSession")
             .last()?.text()?.split(" ")?.first()?.trim()?.toIntOrNull()
         val actors = document.select("div.owl-stage a")
@@ -147,12 +147,11 @@ class DiziGom : MainAPI() {
             val epEp = it.selectFirst("div.baslik")?.text()?.split(" ")?.get(2)?.replace(".", "")
                 ?.toIntOrNull()
             episodeses.add(
-                Episode(
-                    data = epHref,
-                    name = epName,
-                    season = epSeason,
-                    episode = epEp
-                )
+                newEpisode(epHref) {
+                    this.name = epName
+                    this.season = epSeason
+                    this.episode = epEp
+                }
             )
         }
 
@@ -162,7 +161,7 @@ class DiziGom : MainAPI() {
             this.plot = description
             this.tags = tags
             this.duration = duration
-            this.rating = rating
+            this.score = Score.from10(rating)
             addActors(actors)
         }
 
@@ -211,7 +210,7 @@ class DiziGom : MainAPI() {
                 ExtractorLinkType.M3U8
             ) {
                 this.referer = "$mainUrl/"
-                this. quality = getQualityFromName(source.label)
+                this.quality = getQualityFromName(source.label)
             }
         )
 

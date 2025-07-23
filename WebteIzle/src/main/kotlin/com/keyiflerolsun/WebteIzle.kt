@@ -13,6 +13,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
@@ -131,7 +132,7 @@ class WebteIzle : MainAPI() {
         val year        = document.selectXpath("//td[contains(text(), 'Vizyon')]/following-sibling::td").text().trim().split(" ").last().toIntOrNull()
         val description = document.selectFirst("blockquote")?.text()?.trim()
         val tags        = document.selectXpath("//a[@itemgroup='genre']").map { it.text() }
-        val rating      = document.selectFirst("div.detail")?.text()?.trim()?.replace(",", ".").toRatingInt()
+        val rating      = document.selectFirst("div.detail")?.text()?.trim()?.replace(",", ".")
         val duration    = document.selectXpath("//td[contains(text(), 'Süre')]/following-sibling::td").text().trim().split(" ").first().toIntOrNull()
         val trailer     = document.selectFirst("button#fragman")?.attr("data-ytid")
         val actors      = document.selectXpath("//div[@data-tab='oyuncular']//a").map {
@@ -143,7 +144,7 @@ class WebteIzle : MainAPI() {
             this.year      = year
             this.plot      = description
             this.tags      = tags
-            this.rating    = rating
+            this.score     = Score.from10(rating)
             this.duration  = duration
             addTrailer("https://www.youtube.com/embed/${trailer}")
             addActors(actors)
@@ -198,6 +199,11 @@ class WebteIzle : MainAPI() {
 
                     if (matchResult == null) {
                         Log.d("WBTI", "scriptSource » $scriptSource")
+                        if (thisEmbed.baslik.contains("Dzen")) {
+                            val dzenId = scriptSource.substringAfter("var vid = '").substringBefore("';")
+                            iframe = "https://dzen.ru/embed/$dzenId"
+                        }
+
                     } else {
                         val platform = matchResult.groupValues[1]
                         val vidId    = matchResult.groupValues[2]
@@ -251,7 +257,6 @@ class WebteIzle : MainAPI() {
                     continue
                 } else if (iframe.contains("playerjs-three.vercel.app") || iframe.contains("cstkcstk.github.io")) {
                     val decoded = iframe.substringAfter("?v=").let { query ->
-                        Log.d("WBTI", query)
                         val splittedQuery = query.split("&t=")
                         val encHex = splittedQuery[0]
                         val encCaptions = splittedQuery[1]

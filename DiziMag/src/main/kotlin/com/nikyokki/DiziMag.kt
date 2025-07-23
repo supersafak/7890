@@ -12,6 +12,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
@@ -174,7 +175,7 @@ class DiziMag : MainAPI() {
         val year =
             document.selectFirst("h1 span")?.text()?.substringAfter("(")?.substringBefore(")")
                 ?.toIntOrNull()
-        val rating = document.selectFirst("span.color-imdb")?.text()?.trim()?.toRatingInt()
+        val rating = document.selectFirst("span.color-imdb")?.text()?.trim()
         val duration =
             document.selectXpath("//span[text()='Süre']//following-sibling::p").text().trim()
                 .split(" ").first().toIntOrNull()
@@ -214,7 +215,7 @@ class DiziMag : MainAPI() {
                 this.year = year
                 this.plot = description
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 addActors(actors)
                 addTrailer("https://www.youtube.com/embed/${trailer}")
             }
@@ -224,7 +225,7 @@ class DiziMag : MainAPI() {
                 this.year = year
                 this.plot = description
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 this.duration = duration
                 addActors(actors)
                 addTrailer("https://www.youtube.com/embed/${trailer}")

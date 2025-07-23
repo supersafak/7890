@@ -10,12 +10,14 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.fixUrlNull
 import com.lagradost.cloudstream3.mainPageOf
+import com.lagradost.cloudstream3.newEpisode
 import com.lagradost.cloudstream3.newHomePageResponse
 import com.lagradost.cloudstream3.newMovieLoadResponse
 import com.lagradost.cloudstream3.newMovieSearchResponse
@@ -142,7 +144,7 @@ class HDFilmCehennemi2 : MainAPI() {
         val description = document.selectFirst("article.text-white p")?.text()?.trim()
         var year = document.selectFirst("div.release a")?.text()?.trim()?.toIntOrNull()
         val tags = document.select("div#listelements a").map { it.text() }
-        val rating = document.selectFirst("div.rate")?.text().toRatingInt()
+        val rating = document.selectFirst("div.rate")?.text()
         val actors = mutableListOf<Actor>()
         val trailer = document.selectFirst("div.nav-link")?.attr("data-trailer")
         val listItems = document.select("tbody tr").select("div")
@@ -171,7 +173,7 @@ class HDFilmCehennemi2 : MainAPI() {
                 this.plot = description
                 this.year = year
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 this.duration = duration
                 this.recommendations = recommendations
                 addActors(actors)
@@ -187,12 +189,11 @@ class HDFilmCehennemi2 : MainAPI() {
                     val epnum =
                         epName?.substringAfter("Sezon ")?.substringBefore(". Bölüm")?.toIntOrNull()
                     episodes.add(
-                        Episode(
-                            data = epHref,
-                            name = epName,
-                            season = epSzn,
-                            episode = epnum
-                        )
+                        newEpisode(epHref) {
+                            this.name = epName
+                            this.season = epSzn
+                            this.episode = epnum
+                        }
                     )
                 }
             }
@@ -201,7 +202,7 @@ class HDFilmCehennemi2 : MainAPI() {
                 this.plot = description
                 this.year = year
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 this.duration = duration
                 addActors(actors)
                 addTrailer(trailer)

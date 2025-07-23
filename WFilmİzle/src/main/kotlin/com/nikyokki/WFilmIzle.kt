@@ -10,6 +10,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
@@ -39,6 +40,7 @@ class WFilmIzle : MainAPI() {
     override val supportedTypes = setOf(TvType.Movie)
 
     override val mainPage = mainPageOf(
+        "${mainUrl}/"                               to "En Son Eklenenler",
         "${mainUrl}/filmizle/aile-filmleri-izle-hd/"             to "Aile",
         "${mainUrl}/filmizle/aksiyon-filmleri-izle-hd/"          to "Aksiyon",
         "${mainUrl}/filmizle/animasyon-filmleri-izle/"           to "Animasyon",
@@ -62,9 +64,11 @@ class WFilmIzle : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val document = app.get("${request.data}/page/${page}").document
-        val home = document.select("div.movie-preview-content").mapNotNull { it.toMainPageResult() }
-
-        return newHomePageResponse(request.name, home)
+        var home: List<SearchResponse>? = document.select("div.movie-preview-content").mapNotNull { it.toMainPageResult() }
+        if (request.name == "En Son Eklenenler") {
+            home = document.selectFirst("div.fix-film_item")?.select("div.movie-preview-content")?.mapNotNull { it.toMainPageResult() }
+        }
+        return newHomePageResponse(request.name, home!!)
     }
 
     private fun Element.toMainPageResult(): SearchResponse {
@@ -106,7 +110,7 @@ class WFilmIzle : MainAPI() {
         val tags = document.select("div.categories a").map { it.text() }
         Log.d("WFI", "tags: $tags")
         val rating = document.select("div.imdb").last()?.text()?.replace("IMDb Puanı:","")?.split("/")
-            ?.first()?.trim()?.toRatingInt()
+            ?.first()?.trim()
         Log.d("WFI", "rating: " + document.selectFirst("div.imdb").toString())
         val actors = document.select("div.actor a").map { it.text() }
         Log.d("WFI", "actors: $actors")
@@ -117,7 +121,7 @@ class WFilmIzle : MainAPI() {
             this.plot = description
             this.year = year
             this.tags = tags
-            this.rating = rating
+            this.score = Score.from10(rating)
             addActors(actors)
             addTrailer(trailer)
         }
@@ -129,24 +133,19 @@ class WFilmIzle : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        Log.d("WFI", "data » $data")
         val cookie = (System.currentTimeMillis() - 50000)  / 1000
-        println("Timestamp (milisaniye): $cookie")
-        Log.d("WFI", cookie.toString())
         val document = app.get(data, headers = mapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
             "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"),
             cookies = mapOf(
                 "session_starttime" to cookie.toString()
             )).document
         val iframe   = fixUrlNull(document.select("div#vast iframe").last()?.attr("src") ?: "")
-        Log.d("WFI", "iframe » $iframe")
         var hash = ""
         if (iframe?.contains("/player/") == true) {
              hash = iframe.substringAfter("data=") ?: ""
         } else {
              hash = iframe?.split("/")?.last() ?: ""
         }
-        Log.d("WFI", "hash » $hash")
         if (iframe?.contains("hdplayersystem") == true) {
             val json = app.post("https://hdplayersystem.live/player/index.php?data=$hash&do=getVideo", headers =
             mapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox",
@@ -157,13 +156,11 @@ class WFilmIzle : MainAPI() {
                     "r" to "$mainUrl/"
                 ),
             )
-            Log.d("WFI", "JSONTEXT: ${json.document.body().text()}")
             val jsonData = ObjectMapper().readValue(json.document.body().text(), IframeResponse::class.java)
             // 'ck' alanını decode edelim
             val decodedCK = decodeUnicodeEscapeSequences(jsonData.ck)
             val updatedVideoData = jsonData.copy(ck = decodedCK)
             val master = updatedVideoData.videoSource ?: ""
-            Log.d("WFI", "Master: $master")
             callback.invoke(
                 newExtractorLink(
                     source = name,

@@ -15,6 +15,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
@@ -167,7 +168,7 @@ class HDFilmCehennemi : MainAPI() {
         val description = document.selectFirst("article.post-info-content > p")?.text()?.trim()
         val rating =
             document.selectFirst("div.post-info-imdb-rating span")?.text()?.substringBefore("(")
-                ?.trim()?.toRatingInt()
+                ?.trim()
         val actors = document.select("div.post-info-cast a").map {
             Actor(it.selectFirst("strong")!!.text(), it.select("img").attr("data-src"))
         }
@@ -211,7 +212,7 @@ class HDFilmCehennemi : MainAPI() {
                 this.year = year
                 this.plot = description
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 this.recommendations = recommendations
                 addActors(actors)
                 addTrailer(trailer)
@@ -226,7 +227,7 @@ class HDFilmCehennemi : MainAPI() {
                 this.year = year
                 this.plot = description
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 this.recommendations = recommendations
                 addActors(actors)
                 addTrailer(trailer)

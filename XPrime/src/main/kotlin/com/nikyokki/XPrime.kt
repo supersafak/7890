@@ -13,6 +13,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
@@ -122,7 +123,7 @@ class XPrime : MainAPI() {
         val description = movie.overview
         val year = movie.releaseDate?.split("-")?.first()?.toIntOrNull()
         val tags = movie.genres?.map { it.name }
-        val rating = movie.vote.toString().toRatingInt()
+        val rating = movie.vote.toString()
         val duration = movie.runtime
         val trailerUrl = "$mainUrl/movie/$id/videos?api_key=$apiKey"
         val trailerDoc = app.get(trailerUrl)
@@ -140,7 +141,7 @@ class XPrime : MainAPI() {
             this.plot = description
             this.year = year
             this.tags = tags
-            this.rating = rating
+            this.score = Score.from10(rating)
             this.duration = duration
             this.recommendations = recommendations
             addActors(actors)

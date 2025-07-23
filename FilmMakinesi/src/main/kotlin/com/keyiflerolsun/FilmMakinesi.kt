@@ -11,6 +11,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
@@ -138,7 +139,7 @@ class FilmMakinesi : MainAPI() {
         val description = document.select("div.info-description p").last()?.text()?.trim()
         val tags = document.selectFirst("dt:contains(Tür:) + dd")?.text()?.split(", ")
         val rating =
-            document.selectFirst("dt:contains(IMDB Puanı:) + dd")?.text()?.trim()?.toRatingInt()
+            document.selectFirst("dt:contains(IMDB Puanı:) + dd")?.text()?.trim()
         val year =
             document.selectFirst("dt:contains(Yapım Yılı:) + dd")?.text()?.trim()?.toIntOrNull()
 
@@ -181,7 +182,7 @@ class FilmMakinesi : MainAPI() {
                 this.year = year
                 this.plot = description
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 addActors(actors)
                 addTrailer(trailer)
             }
@@ -191,7 +192,7 @@ class FilmMakinesi : MainAPI() {
             this.year = year
             this.plot = description
             this.tags = tags
-            this.rating = rating
+            this.score = Score.from10(rating)
             this.duration = duration
             this.recommendations = recommendations
             addActors(actors)

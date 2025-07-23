@@ -15,6 +15,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
@@ -189,12 +190,23 @@ class RoketDizi : MainAPI() {
         val cultTitle = item.cultureTitle.toString()
         val title =
             if (orgTitle == cultTitle || cultTitle.isEmpty()) orgTitle else "$orgTitle - $cultTitle"
-        val poster = fixUrlNull(
-            item.posterUrl?.replace(
-                "images-macellan-online.cdn.ampproject.org/i/s/",
-                ""
+        var poster: String? = ""
+        if (item.backUrl?.isNotEmpty() == true) {
+            poster = fixUrlNull(
+                item.backUrl.replace(
+                    "images-macellan-online.cdn.ampproject.org/i/s/",
+                    ""
+                )
             )
-        )
+        } else if (item.posterUrl?.isNotEmpty() ==  true) {
+            poster = fixUrlNull(
+                item.posterUrl.replace(
+                    "images-macellan-online.cdn.ampproject.org/i/s/",
+                    ""
+                )
+            )
+        }
+
         val description = item.description
         val year = item.releaseYear
         val tags = item.categories?.split(",")
@@ -247,7 +259,7 @@ class RoketDizi : MainAPI() {
                 this.year = year
                 this.plot = description
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 addActors(actors)
                 addTrailer(trailer)
             }
@@ -258,7 +270,7 @@ class RoketDizi : MainAPI() {
             this.plot = description
             this.year = year
             this.tags = tags
-            this.rating = rating
+            this.score = Score.from10(rating)
             this.duration = duration
             addActors(actors)
             addTrailer(trailer)

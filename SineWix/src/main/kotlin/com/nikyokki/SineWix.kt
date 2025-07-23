@@ -112,7 +112,7 @@ class SineWix : MainAPI() {
         val description     = result.overview
         val year            = result.releaseDate?.split("-")?.first()?.toIntOrNull()
         val tags            = result.genres?.map { it.name }
-        val rating          = result.vote.toRatingInt()
+        val rating          = result.vote
         val duration        = result.runtime?.toInt()
         val actors          = result.cast?.map { Actor(it.name!!, it.profilePath) }
         val trailer         = result.trailer
@@ -122,7 +122,7 @@ class SineWix : MainAPI() {
             this.plot            = description
             this.year            = year
             this.tags            = tags as List<String>?
-            this.rating          = rating
+            this.score          = Score.from10(rating)
             this.duration        = duration
             addActors(actors)
             addTrailer("https://www.youtube.com/embed/${trailer}")
@@ -137,21 +137,13 @@ class SineWix : MainAPI() {
         val originalName = result.originalName ?: ""
         val name = result.name ?: ""
         val title           = "$originalName - $name"
-        Log.d("SWX", "title » $title")
         val poster          = result.backdropPath
-        Log.d("SWX", "poster » $poster")
         val description     = result.overview
-        Log.d("SWX", "description » $description")
         val year            = result.releaseDate?.split("-")?.first()?.toIntOrNull()
-        Log.d("SWX", "year » $year")
         val tags            = result.genres?.map { it }
-        Log.d("SWX", "tags » $tags")
-        val rating          = result.vote.toRatingInt()
-        Log.d("SWX", "rating » $rating")
+        val rating          = result.vote
         val actors          = result.cast?.map { Actor(it.name!!, it.profilePath) }
-        Log.d("SWX", "actors » $actors")
         val trailer         = result.trailer
-        Log.d("SWX", "trailer » $trailer")
 
         val episodes = mutableListOf<Episode>()
         result.seasons?.forEach {
@@ -177,7 +169,7 @@ class SineWix : MainAPI() {
                 this.year            = year
                 this.plot            = description
                 this.tags            = tags
-                this.rating          = rating
+                this.score           = Score.from10(rating)
                 addActors(actors)
                 addTrailer(trailer)
             }
@@ -187,7 +179,7 @@ class SineWix : MainAPI() {
                 this.year            = year
                 this.plot            = description
                 this.tags            = tags
-                this.rating          = rating
+                this.score           = Score.from10(rating)
                 addActors(actors)
                 addTrailer(trailer)
             }

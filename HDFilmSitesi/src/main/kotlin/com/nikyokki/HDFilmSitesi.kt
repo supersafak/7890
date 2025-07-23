@@ -9,6 +9,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
@@ -16,6 +17,7 @@ import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.fixUrl
 import com.lagradost.cloudstream3.fixUrlNull
 import com.lagradost.cloudstream3.mainPageOf
+import com.lagradost.cloudstream3.newEpisode
 import com.lagradost.cloudstream3.newHomePageResponse
 import com.lagradost.cloudstream3.newMovieLoadResponse
 import com.lagradost.cloudstream3.newMovieSearchResponse
@@ -95,7 +97,6 @@ class HDFilmSitesi : MainAPI() {
             document.select("a[rel='category']").map { it.text().substringBefore(" Filmleri") }
         val rating =
             document.selectFirst("div.puanlar span")?.text()?.trim()?.substringAfter("IMDb")
-                .toRatingInt()
         val duration =
             document.selectFirst("span[itemprop='duration']")?.text()?.split(" ")?.first()?.trim()
                 ?.toIntOrNull()
@@ -129,12 +130,11 @@ class HDFilmSitesi : MainAPI() {
                 }
 
                 episodes.add(
-                    Episode(
-                        data = iframeLink,
-                        name = "${sz_num}. Sezon ${ep_num}. Bölüm",
-                        season = sz_num,
-                        episode = ep_num
-                    )
+                    newEpisode(iframeLink) {
+                        this.name = "${sz_num}. Sezon ${ep_num}. Bölüm"
+                        this.season = sz_num
+                        this.episode = ep_num
+                    }
                 )
             }
 
@@ -143,7 +143,7 @@ class HDFilmSitesi : MainAPI() {
                 this.plot = description
                 this.year = year
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 this.duration = duration
                 addActors(actors)
                 addTrailer(trailer)
@@ -154,7 +154,7 @@ class HDFilmSitesi : MainAPI() {
                 this.plot = description
                 this.year = year
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 this.duration = duration
                 addActors(actors)
                 addTrailer(trailer)

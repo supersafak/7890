@@ -173,29 +173,22 @@ class TvDiziler : MainAPI() {
         val mainReq = app.get(url, referer = mainUrl)
         val document = mainReq.document
         val title = document.selectFirst("div.page-title p")?.text()?.replace(" izle", "") ?: "return null"
-        Log.d("TVD", "title -> $title")
         val poster =
             fixUrlNull(document.selectFirst("div.series-profile-image img")?.attr("data-src"))
-        Log.d("TVD", "poster -> $poster")
         val year =
             document.selectFirst("h1 span")?.text()?.substringAfter("(")?.substringBefore(")")
                 ?.toIntOrNull()
-        Log.d("TVD", "year -> $year")
 
-        val rating = document.selectXpath("//span[text()='IMDb Puanı']//following-sibling::p").text().trim().toRatingInt()
-        Log.d("TVD", "rating -> $rating")
+        val rating = document.selectXpath("//span[text()='IMDb Puanı']//following-sibling::p").text().trim()
 
         val duration =
             document.selectXpath("//span[text()='Süre']//following-sibling::p").text().trim()
                 .split(" ").first().toIntOrNull()
-        Log.d("TVD", "duration -> $duration")
 
         val description = document.selectFirst("div.series-profile-summary p")?.text()?.trim()
-        Log.d("TVD", "description -> $description")
 
         val tags = document.selectFirst("div.series-profile-type")?.select("a")
             ?.mapNotNull { it.text().trim() }
-        Log.d("TVD", "tags -> $tags")
         val trailer = document.selectFirst("div.series-profile-trailer")?.attr("data-yt")
         val actors = mutableListOf<Actor>()
         document.select("div.series-profile-cast li").forEach {
@@ -228,7 +221,7 @@ class TvDiziler : MainAPI() {
                 this.year = year
                 this.plot = description
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 addActors(actors)
                 addTrailer("https://www.youtube.com/embed/${trailer}")
             }
@@ -238,7 +231,7 @@ class TvDiziler : MainAPI() {
                 this.year = year
                 this.plot = description
                 this.tags = tags
-                this.rating = rating
+                this.score = Score.from10(rating)
                 this.duration = duration
                 addActors(actors)
                 addTrailer("https://www.youtube.com/embed/${trailer}")

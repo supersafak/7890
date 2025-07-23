@@ -33,6 +33,7 @@ data class ContentItem(
     @JsonProperty("release_year") val releaseYear: Int?,
     @JsonProperty("total_minutes") val totalMinutes: Int?,
     @JsonProperty("poster_url") val posterUrl: String?,
+    @JsonProperty("back_url") val backUrl: String?,
     @JsonProperty("description") val description: String?,
     @JsonProperty("categories") val categories: String?,
     @JsonProperty("used_slug") val usedSlug: String?,

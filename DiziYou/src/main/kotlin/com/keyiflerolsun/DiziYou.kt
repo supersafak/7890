@@ -67,7 +67,7 @@ class DiziYou : MainAPI() {
         val description     = document.selectFirst("div.diziyou_desc")?.ownText()?.trim()
         val year            = document.selectFirst("span.dizimeta:contains(Yapım Yılı)")?.nextSibling()?.toString()?.trim()?.toIntOrNull()
         val tags            = document.select("div.genres a").map { it.text() }
-        val rating          = document.selectFirst("span.dizimeta:contains(IMDB)")?.nextSibling()?.toString()?.trim()?.toRatingInt()
+        val rating          = document.selectFirst("span.dizimeta:contains(IMDB)")?.nextSibling()?.toString()?.trim()
         val actors          = document.selectFirst("span.dizimeta:contains(Oyuncular)")?.nextSibling()?.toString()?.trim()?.split(", ")?.map { Actor(it) }
         val trailer         = document.selectFirst("iframe.trailer-video")?.attr("src")
 
@@ -89,7 +89,7 @@ class DiziYou : MainAPI() {
             this.plot      = description
             this.year      = year
             this.tags      = tags
-            this.rating    = rating
+            this.score     = Score.from10(rating)
             addActors(actors)
             addTrailer(trailer)
         }
