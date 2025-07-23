@@ -36,8 +36,12 @@ class CizgiMax : MainAPI() {
         val title     = this.selectFirst("h2.truncate")?.text()?.trim() ?: return null
         val href      = fixUrlNull(this.selectFirst("div.poster-subject a")?.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("div.poster-media img")?.attr("data-src"))
+        val score     = this.selectFirst("span.item.rating")?.text()?.trim()
 
-        return newTvSeriesSearchResponse(title, href, TvType.Cartoon) { this.posterUrl = posterUrl }
+        return newTvSeriesSearchResponse(title, href, TvType.Cartoon) {
+            this.posterUrl = posterUrl
+            this.score     = Score.from10(score)
+        }
     }
 
     override suspend fun search(query: String): List<SearchResponse> {

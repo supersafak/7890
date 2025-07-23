@@ -116,14 +116,17 @@ class AsyaWatch : MainAPI() {
         val posterUrl = fixUrlNull(
             this.posterUrl.toString().replace("images-macellan-online.cdn.ampproject.org/i/s/", "")
         )
+        val score = this.imdbPoint
 
         return if (href!!.contains("/dizi/")) {
             newTvSeriesSearchResponse(title!!, href, TvType.TvSeries) {
                 this.posterUrl = posterUrl
+                this.score = Score.from10(score)
             }
         } else {
             newMovieSearchResponse(title!!, href, TvType.Movie) {
                 this.posterUrl = posterUrl
+                this.score = Score.from10(score)
             }
         }
     }

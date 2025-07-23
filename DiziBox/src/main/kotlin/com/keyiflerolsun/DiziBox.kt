@@ -100,8 +100,12 @@ class DiziBox : MainAPI() {
         val title     = this.selectFirst("h3 a")?.text() ?: return null
         val href      = fixUrlNull(this.selectFirst("h3 a")?.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        val score    = this.selectFirst("span.label.label-imdb b")?.text()?.trim()
 
-        return newTvSeriesSearchResponse(title, href, TvType.TvSeries) { this.posterUrl = posterUrl }
+        return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
+            this.posterUrl = posterUrl
+            this.score     = Score.from10(score)
+        }
     }
 
     private suspend fun Element.sonBolumler(): SearchResponse? {
