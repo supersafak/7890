@@ -78,7 +78,7 @@ class DiziMom : MainAPI() {
             this.selectFirst("div.categorytitle a")?.text()?.substringBefore(" izle") ?: return null
         val href = fixUrlNull(this.selectFirst("div.categorytitle a")?.attr("href")) ?: return null
         val posterUrl = fixUrlNull(this.selectFirst("div.cat-img img")?.attr("src"))
-        val score = this.selectFirst("div.episode-date")?.text()?.replace("IMDb:", "")?.trim()
+        val score = this.selectFirst("div.imdbp")?.text()?.replace("(IMDb:", "")?.replace(")", "")?.trim()
 
         return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
             this.posterUrl = posterUrl

@@ -37,7 +37,7 @@ data class ContentItem(
     @JsonProperty("description") val description: String?,
     @JsonProperty("categories") val categories: String?,
     @JsonProperty("used_slug") val usedSlug: String?,
-    @JsonProperty("imdb_point") val imdbPoint: Int?
+    @JsonProperty("imdb_point") val imdbPoint: Double?
 )
 
 data class RelatedResults(

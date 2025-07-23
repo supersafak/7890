@@ -14,6 +14,7 @@ data class SineData(
     @JsonProperty("backdrop_path") val backdropPath: String? = null,
     @JsonProperty("overview") val overview: String? = null,
     @JsonProperty("type") val type: String? = null,
+    @JsonProperty("vote_average") val vote: Double? = null,
 )
 
 data class SineMovie(
@@ -25,7 +26,7 @@ data class SineMovie(
     @JsonProperty("overview") val overview: String? = null,
     @JsonProperty("poster_path") val posterPath: String? = null,
     @JsonProperty("backdrop_path") val backdropPath: String? = null,
-    @JsonProperty("vote_average") val vote: String? = null,
+    @JsonProperty("vote_average") val vote: Double? = null,
     @JsonProperty("runtime") val runtime: String? = null,
     @JsonProperty("release_date") val releaseDate: String? = null,
     @JsonProperty("preview_path") val trailer: String? = null,

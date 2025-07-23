@@ -5,29 +5,48 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.jsoup.nodes.Element
-import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.APIHolder.capitalize
-import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.Actor
+import com.lagradost.cloudstream3.Episode
+import com.lagradost.cloudstream3.HomePageResponse
+import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
-import com.lagradost.nicehttp.Requests
+import com.lagradost.cloudstream3.MainAPI
+import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.Score
+import com.lagradost.cloudstream3.SearchResponse
+import com.lagradost.cloudstream3.SubtitleFile
+import com.lagradost.cloudstream3.TvType
+import com.lagradost.cloudstream3.app
+import com.lagradost.cloudstream3.mainPageOf
+import com.lagradost.cloudstream3.newAnimeSearchResponse
+import com.lagradost.cloudstream3.newEpisode
+import com.lagradost.cloudstream3.newHomePageResponse
+import com.lagradost.cloudstream3.newMovieLoadResponse
+import com.lagradost.cloudstream3.newMovieSearchResponse
+import com.lagradost.cloudstream3.newTvSeriesLoadResponse
+import com.lagradost.cloudstream3.newTvSeriesSearchResponse
+import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.ExtractorLinkType
+import com.lagradost.cloudstream3.utils.Qualities
+import com.lagradost.cloudstream3.utils.loadExtractor
+import com.lagradost.cloudstream3.utils.newExtractorLink
 
 class SineWix : MainAPI() {
-    override var mainUrl              = "https://ydfvfdizipanel.ru/public/api"
-    override var name                 = "SineWix"
-    override val hasMainPage          = true
-    override var lang                 = "tr"
-    override val hasQuickSearch       = false
+    override var mainUrl = "https://ydfvfdizipanel.ru/public/api"
+    override var name = "SineWix"
+    override val hasMainPage = true
+    override var lang = "tr"
+    override val hasQuickSearch = false
     override val hasChromecastSupport = true
-    override val hasDownloadSupport   = true
-    override val supportedTypes       = setOf(TvType.Movie, TvType.TvSeries, TvType.Anime)
+    override val hasDownloadSupport = true
+    override val supportedTypes = setOf(TvType.Movie, TvType.TvSeries, TvType.Anime)
 
     override val mainPage = mainPageOf(
-        "${mainUrl}/genres/topteen/all"           to "Top 10 Listesi",
-        "${mainUrl}/genres/latestmovies/all"      to "Son Eklenen Filmler",
-        "${mainUrl}/genres/latestseries/all"      to "Son Eklenen Diziler",
-        "${mainUrl}/genres/latestanimes/all"      to "Son Eklenen Animeler",
+        "${mainUrl}/genres/topteen/all" to "Top 10 Listesi",
+        "${mainUrl}/genres/latestmovies/all" to "Son Eklenen Filmler",
+        "${mainUrl}/genres/latestseries/all" to "Son Eklenen Diziler",
+        "${mainUrl}/genres/latestanimes/all" to "Son Eklenen Animeler",
     )
 
     private val key = "9iQNC5HQwPlaFuJDkhncJ5XTJ8feGXOJatAA"
@@ -61,27 +80,39 @@ class SineWix : MainAPI() {
     }
 
     private fun SineData.toMainPageResult(): SearchResponse? {
-        val title     = this.title ?: this.name
+        val title = this.title ?: this.name
         val posterUrl = this.posterPath
+        val score = this.vote
         val href: String
         when (this.type) {
             "movie" -> {
                 href = "${mainUrl}/media/detail/${this.id}/${key}"
-                return newMovieSearchResponse(title!!, href, TvType.Movie) { this.posterUrl = posterUrl }
+                return newMovieSearchResponse(title!!, href, TvType.Movie) {
+                    this.posterUrl = posterUrl
+                    this.score = Score.from10(score)
+                }
             }
+
             "serie" -> {
                 href = "${mainUrl}/series/show/${this.id}/${key}"
-                return newTvSeriesSearchResponse(title!!, href, TvType.TvSeries) { this.posterUrl = posterUrl }
+                return newTvSeriesSearchResponse(title!!, href, TvType.TvSeries) {
+                    this.posterUrl = posterUrl
+                    this.score = Score.from10(score)
+                }
             }
+
             else -> {
                 href = "${mainUrl}/animes/show/${this.id}/${key}"
-                return newAnimeSearchResponse(title!!, href, TvType.Anime) { this.posterUrl = posterUrl }
+                return newAnimeSearchResponse(title!!, href, TvType.Anime) {
+                    this.posterUrl = posterUrl
+                    this.score = Score.from10(score)
+                }
             }
         }
     }
 
     override suspend fun search(query: String): List<SearchResponse>? {
-        val document = app.get("${mainUrl}/search/${query}/${key}", headers= headers).document
+        val document = app.get("${mainUrl}/search/${query}/${key}", headers = headers).document
         val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         val result: SineSearch = objectMapper.readValue(document.body().text())
@@ -105,25 +136,30 @@ class SineWix : MainAPI() {
         val objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         val result: SineMovie = objectMapper.readValue(document.body().text())
-        val originalName    = result.originalName
-        val name            = result.title
-        val title           = "$originalName - $name"
-        val poster          = result.backdropPath
-        val description     = result.overview
-        val year            = result.releaseDate?.split("-")?.first()?.toIntOrNull()
-        val tags            = result.genres?.map { it.name }
-        val rating          = result.vote
-        val duration        = result.runtime?.toInt()
-        val actors          = result.cast?.map { Actor(it.name!!, it.profilePath) }
-        val trailer         = result.trailer
+        val originalName = result.originalName
+        val name = result.title
+        val title = "$originalName - $name"
+        val poster = result.backdropPath
+        val description = result.overview
+        val year = result.releaseDate?.split("-")?.first()?.toIntOrNull()
+        val tags = result.genres?.map { it.name }
+        val rating = result.vote
+        val duration = result.runtime?.toInt()
+        val actors = result.cast?.map { Actor(it.name!!, it.profilePath) }
+        val trailer = result.trailer
 
-        return newMovieLoadResponse(title, result.videos?.get(0)?.link!!, TvType.Movie, result.videos[0].link!!) {
-            this.posterUrl       = poster
-            this.plot            = description
-            this.year            = year
-            this.tags            = tags as List<String>?
-            this.score          = Score.from10(rating)
-            this.duration        = duration
+        return newMovieLoadResponse(
+            title,
+            result.videos?.get(0)?.link!!,
+            TvType.Movie,
+            result.videos[0].link!!
+        ) {
+            this.posterUrl = poster
+            this.plot = description
+            this.year = year
+            this.tags = tags as List<String>?
+            this.score = Score.from10(rating)
+            this.duration = duration
             addActors(actors)
             addTrailer("https://www.youtube.com/embed/${trailer}")
         }
@@ -136,14 +172,14 @@ class SineWix : MainAPI() {
         val result: SineSerie = objectMapper.readValue(document.body().text())
         val originalName = result.originalName ?: ""
         val name = result.name ?: ""
-        val title           = "$originalName - $name"
-        val poster          = result.backdropPath
-        val description     = result.overview
-        val year            = result.releaseDate?.split("-")?.first()?.toIntOrNull()
-        val tags            = result.genres?.map { it }
-        val rating          = result.vote
-        val actors          = result.cast?.map { Actor(it.name!!, it.profilePath) }
-        val trailer         = result.trailer
+        val title = "$originalName - $name"
+        val poster = result.backdropPath
+        val description = result.overview
+        val year = result.releaseDate?.split("-")?.first()?.toIntOrNull()
+        val tags = result.genres?.map { it }
+        val rating = result.vote
+        val actors = result.cast?.map { Actor(it.name!!, it.profilePath) }
+        val trailer = result.trailer
 
         val episodes = mutableListOf<Episode>()
         result.seasons?.forEach {
@@ -165,28 +201,33 @@ class SineWix : MainAPI() {
 
         if (url.contains("/series/show/")) {
             return newTvSeriesLoadResponse(title.trim(), url, TvType.TvSeries, episodes) {
-                this.posterUrl       = poster
-                this.year            = year
-                this.plot            = description
-                this.tags            = tags
-                this.score           = Score.from10(rating)
+                this.posterUrl = poster
+                this.year = year
+                this.plot = description
+                this.tags = tags
+                this.score = Score.from10(rating)
                 addActors(actors)
                 addTrailer(trailer)
             }
         } else {
             return newTvSeriesLoadResponse(title.trim(), url, TvType.Anime, episodes) {
-                this.posterUrl       = poster
-                this.year            = year
-                this.plot            = description
-                this.tags            = tags
-                this.score           = Score.from10(rating)
+                this.posterUrl = poster
+                this.year = year
+                this.plot = description
+                this.tags = tags
+                this.score = Score.from10(rating)
                 addActors(actors)
                 addTrailer(trailer)
             }
         }
     }
 
-    override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
         Log.d("SWX", "data » $data")
         if (data.contains("snwaxdop")) {
             callback.invoke(
@@ -196,7 +237,7 @@ class SineWix : MainAPI() {
                     url = data,
                     ExtractorLinkType.VIDEO
                 ) {
-                    this. quality = Qualities.Unknown.value
+                    this.quality = Qualities.Unknown.value
                     this.headers = headers
                 }
             )

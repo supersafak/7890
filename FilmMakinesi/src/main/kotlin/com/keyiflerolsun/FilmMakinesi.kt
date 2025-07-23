@@ -101,16 +101,19 @@ class FilmMakinesi : MainAPI() {
         val title = aTag.attr("data-title").takeIf { it.isNotBlank() } ?: return null
         val href = fixUrlNull(aTag.attr("href")) ?: return null
         val posterUrl = fixUrlNull(aTag.selectFirst("img")?.attr("src"))
+        val score = this.selectFirst("div.rating")?.text()?.trim()
 
         Log.d("FLMM", "Film: $title, Href: $href, Poster: $posterUrl")
 
         return if (href.contains("/dizi/")) {
             newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
                 this.posterUrl = posterUrl
+                this.score = Score.from10(score)
             }
         } else {
             newMovieSearchResponse(title, href, TvType.Movie) {
                 this.posterUrl = posterUrl
+                this.score = Score.from10(score)
             }
         }
     }
