@@ -9,6 +9,7 @@ import com.lagradost.cloudstream3.utils.ExtractorApi
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.Qualities
+import com.lagradost.cloudstream3.utils.fixUrl
 import com.lagradost.cloudstream3.utils.getAndUnpack
 import com.lagradost.cloudstream3.utils.newExtractorLink
 
@@ -38,12 +39,12 @@ open class HCCloseLoadExtractor : ExtractorApi() {
         val regex = Regex("var player=this\\}\\);var(.*?);myPlayer\\.src")
         val matchResult = regex.find(rawScript)
         val base64Input = rawScript.substringAfter("dc_hello(\"").substringBefore("\");")
-        val lastUrl = dcHello(base64Input)
+        val lastUrl = dcHello(base64Input).substringAfter("http")
         callback.invoke(
             newExtractorLink(
                 source = this.name,
                 name = this.name,
-                url = lastUrl,
+                url = "http$lastUrl",
                 ExtractorLinkType.M3U8
             ) {
                 this.referer = mainUrl
