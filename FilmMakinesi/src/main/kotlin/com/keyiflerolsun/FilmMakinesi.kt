@@ -1,5 +1,3 @@
-// ! Bu araç @keyiflerolsun tarafından | @KekikAkademi için yazılmıştır.
-
 package com.keyiflerolsun
 
 import android.util.Log
@@ -71,7 +69,7 @@ class FilmMakinesi : MainAPI() {
         "${mainUrl}/tur/korku/dizi/sayfa/" to "Korku Dizi",
         "${mainUrl}/tur/animasyon/dizi/sayfa/" to "Animasyon Dizi",
         "${mainUrl}/tur/gizem/dizi/sayfa/" to "Gizem Dizi",
-        //"${mainUrl}/kanal/netflix/sayfa/"                          to "Netflix",
+        //"${mainUrl}/kanal/netflix/sayfa/"                       to "Netflix",
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
@@ -212,13 +210,27 @@ class FilmMakinesi : MainAPI() {
     ): Boolean {
         Log.d("FLMM", "data » $data")
         val document = app.get(data).document
-        val iframe = document.selectFirst("iframe")?.attr("data-src") ?: ""
-        Log.d("FLMM", iframe)
-        loadExtractor(iframe, "${mainUrl}/", subtitleCallback, callback)
+
+        // Ana iframe'i bul ve öncelikli olarak 'data-src', yoksa 'src' niteliğini kullan
+        val iframeSrc = document.selectFirst("div.after-player iframe")?.attr("data-src")
+            ?: document.selectFirst("div.after-player iframe")?.attr("src")
+            ?: "" // Eğer ikisi de yoksa boş string
+
+        if (iframeSrc.isNotBlank()) {
+            Log.d("FLMM", "Ana iframe URL: $iframeSrc")
+            loadExtractor(iframeSrc, "${mainUrl}/", subtitleCallback, callback)
+        } else {
+            Log.d("FLMM", "Ana iframe URL bulunamadı veya boş.")
+        }
+
+        // Mevcut HTML'de 'div.video-parts a' yapısı görünmediği için, bu kısım eğer artık yoksa silinebilir.
+        // Ancak gelecekte tekrar eklenirse veya farklı filmlerde varsa diye şimdilik bırakıyorum.
         document.select("div.video-parts a").forEach {
             val iframeUrl = it.attr("data-video_url")
-            val urlName = it.text()
-            loadExtractor(iframeUrl, "${mainUrl}/", subtitleCallback, callback)
+            if (iframeUrl.isNotBlank()) {
+                 Log.d("FLMM", "Ek iframe URL: $iframeUrl")
+                 loadExtractor(iframeUrl, "${mainUrl}/", subtitleCallback, callback)
+            }
         }
         return true
     }
