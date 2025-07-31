@@ -28,7 +28,7 @@ import com.lagradost.cloudstream3.utils.newExtractorLink
 import org.jsoup.nodes.Element
 
 import com.fasterxml.jackson.annotation.JsonProperty
-
+import com.lagradost.cloudstream3.utils.ExtractorLinkType
 
 
 class FilmModu : MainAPI() {
@@ -199,21 +199,13 @@ class FilmModu : MainAPI() {
                 vidReq.sources?.forEach { source ->
                     callback.invoke(
                         newExtractorLink(
-                            // source parametresi video URL'si olmalı, isimlendirme değil!
                             source = source.src, // BURADA DÜZELTME YAPILDI: source.src kullanıldı
                             name = "FilmModu - $altName", // Kaynak için görünen isim
                             url = fixUrl(source.src), // URL parametresi olarak yine source.src
-                            type = INFER_TYPE // Orijinal kodunuzdaki gibi INFER_TYPE
+                            type = ExtractorLinkType.M3U8 // Orijinal kodunuzdaki gibi INFER_TYPE
                         ) {
-                            // Lambda bloğu içinde ExtractorLink nesnesinin özelliklerini atıyoruz
-                            // Cloudstream'in eski versiyonlarında bu yapı yaygındır.
                             this.referer = altLink // Referer, alternatif linkin kendisi
                             this.quality = getQualityFromName(source.label) // Kaliteyi atama
-                            // isM3u8 burada doğrudan bir parametre olarak yok,
-                            // ancak type INFER_TYPE olduğunda Cloudstream otomatik olarak algılamalı.
-                            // Eğer kaynak bir m3u8 ise ve bu çalışmazsa, bu kısmı tekrar değerlendirebiliriz.
-                            // headers için ise ayrı bir alan yoksa referer'ı doğrudan headers map'i olarak veremeyiz,
-                            // ancak `referer` alanı ExtractorLink'in kendisinde mevcut.
                         }
                     )
                     Log.d("FLMMD", "Video kaynağı eklendi: Source Name: FilmModu - ${altName}, URL: ${source.src}, Label: ${source.label}")
