@@ -21,6 +21,7 @@ import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.base64Decode
+import com.lagradost.cloudstream3.base64DecodeArray
 import com.lagradost.cloudstream3.fixUrlNull
 import com.lagradost.cloudstream3.mainPageOf
 import com.lagradost.cloudstream3.network.CloudflareKiller
@@ -40,6 +41,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import java.lang.Math.floorMod
 
 class HDFilmCehennemi : MainAPI() {
     override var mainUrl = "https://www.hdfilmcehennemi.nl"
@@ -242,11 +244,11 @@ class HDFilmCehennemi : MainAPI() {
         val decodedOnce = base64Decode(base64Input)
         val reversedString = decodedOnce.reversed()
         val decodedTwice = base64Decode(reversedString)
-        val link    = if (decodedTwice.contains("+")) {
+        val link = if (decodedTwice.contains("+")) {
             decodedTwice.substringAfterLast("+")
         } else if (decodedTwice.contains(" ")) {
             decodedTwice.substringAfterLast(" ")
-        } else if (decodedTwice.contains("|")){
+        } else if (decodedTwice.contains("|")) {
             decodedTwice.substringAfterLast("|")
         } else {
             decodedTwice
@@ -254,34 +256,38 @@ class HDFilmCehennemi : MainAPI() {
         return link
     }
 
-    private suspend fun invokeLocalSource(
-        source: String,
-        url: String,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val script = app.get(
-            url,
-            referer = "${mainUrl}/",
-            interceptor = interceptor
-        ).document.select("script").find { it.data().contains("sources:") }?.data() ?: return
-        //Log.d("HDCH", "script » $script")
-        val videoData = getAndUnpack(script).substringAfter("file_link=\"").substringBefore("\";")
-        Log.d("HDCH", "videoData » $videoData")
-        val base64Input = videoData.substringAfter("dc_hello(\"").substringBefore("\");")
-        val lastUrl = dcHello(base64Input).substringAfter("http")
-        callback.invoke(
-            newExtractorLink(
-                source = source,
-                name = source,
-                url = "http$lastUrl",
-                ExtractorLinkType.M3U8
-            ) {
-                this.referer = mainUrl
-                this.quality = Qualities.Unknown.value
+    fun dcNew(parts: List<String>): String {
+        val value = parts.joinToString("")
+        val decodedBytes = base64DecodeArray(value)
+        val rot13Bytes = decodedBytes.map { byte ->
+            val c = byte.toInt()
+            when (c) {
+                in 'a'.code..'z'.code -> {
+                    val base = 'a'.code
+                    (((c - base + 13) % 26) + base).toByte()
+                }
+
+                in 'A'.code..'Z'.code -> {
+                    val base = 'A'.code
+                    (((c - base + 13) % 26) + base).toByte()
+                }
+
+                else -> {
+                    byte
+                }
             }
-        )
+        }.toByteArray()
+        val reversedBytes = rot13Bytes.reversedArray()
+        val unmixedBytes = ByteArray(reversedBytes.size)
+        for (i in reversedBytes.indices) {
+            val charCode = reversedBytes[i].toInt() and 0xFF
+            val offset = 399756995 % (i + 5)
+            val newCharCode = floorMod(charCode - offset, 256)
+            unmixedBytes[i] = newCharCode.toByte()
+        }
+        return String(unmixedBytes, Charsets.ISO_8859_1)
     }
+
 
     override suspend fun loadLinks(
         data: String,
@@ -313,21 +319,13 @@ class HDFilmCehennemi : MainAPI() {
                 Log.d("HDCH", "iframe » $iframe")
                 iframe = iframe.replace("{rapidrame_id}", "")
                 Log.d("HDCH", "iframe » $iframe")
-                if (iframe.contains("rapidrame")) {
-                    iframe = "${mainUrl}/rplayer/" + iframe.substringAfter("?rapidrame_id=")
-                } else if (iframe.contains("mobi")) {
-                    val iframeDoc = Jsoup.parse(apiGet)
-                    iframe = fixUrlNull(
-                        (iframeDoc.selectFirst("iframe")?.attr("data-src"))?.replace("\"", "")
-                            ?.replace("\\", "")?.replace("{rapidrame_id}", "")
-                    ) ?: return@forEach
-                }
-                Log.d("HDCH", "$source » $videoID » $iframe")
-                if (iframe.contains("hdfilmcehennemi.mobi")) {
+                /*if (iframe.contains("hdfilmcehennemi.mobi")){
                     loadExtractor(iframe, data, subtitleCallback, callback)
                 } else {
                     invokeLocalSource(source, iframe, subtitleCallback, callback)
-                }
+                }*/
+                loadExtractor(iframe, data, subtitleCallback, callback)
+                Log.d("HDCH", "$source » $videoID » $iframe")
             }
         }
         return true

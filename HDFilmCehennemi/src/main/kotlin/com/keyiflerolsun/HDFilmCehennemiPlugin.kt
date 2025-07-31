@@ -9,5 +9,6 @@ class HDFilmCehennemiPlugin: Plugin() {
     override fun load(context: Context) {
         registerMainAPI(HDFilmCehennemi())
         registerExtractorAPI(HCCloseLoadExtractor())
+        registerExtractorAPI(HCRapidrameExtractor())
     }
 }
