@@ -35,12 +35,12 @@ class VidmolyNet : ExtractorApi() {
 
         callback.invoke(
             newExtractorLink(
-                source = "VidMoly",
-                name = "VidMoly",
+                source = this.name,
+                name = this.name,
                 url = m3uLink,
                 type = ExtractorLinkType.M3U8
             ) {
-                this.referer = "https://vidmoly.net/"
+                this.referer = mainUrl
                 this.quality = Qualities.Unknown.value
             }
         )
