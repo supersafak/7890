@@ -4,6 +4,7 @@ package com.keyiflerolsun
 
 import android.util.Log
 import com.lagradost.cloudstream3.Actor
+import com.lagradost.cloudstream3.ErrorLoadingException
 import com.lagradost.cloudstream3.HomePageResponse
 import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
@@ -21,6 +22,7 @@ import com.lagradost.cloudstream3.newMovieLoadResponse
 import com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
+import com.lagradost.cloudstream3.utils.INFER_TYPE
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.loadExtractor
 import com.lagradost.cloudstream3.utils.newExtractorLink
@@ -173,7 +175,12 @@ class SuperFilmGeldi : MainAPI() {
                 }
             )
         } else {
-            loadExtractor(iframe, "${mainUrl}/", subtitleCallback, callback)
+            if (iframe.contains("vidmoly")) {
+                val frame = iframe.replace("vidmoly.to", "vidmoly.me")
+                loadExtractor(frame,"${mainUrl}/", subtitleCallback, callback)
+            } else {
+                loadExtractor(iframe, "${mainUrl}/", subtitleCallback, callback)
+            }
         }
 
         return true

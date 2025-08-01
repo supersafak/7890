@@ -9,5 +9,6 @@ class WebteIzlePlugin: Plugin() {
     override fun load(context: Context) {
         registerMainAPI(WebteIzle())
         registerExtractorAPI(Dzen())
+        registerExtractorAPI(StreamRubyExtractor())
     }
 }
