@@ -10,5 +10,6 @@ class WebteIzlePlugin: Plugin() {
         registerMainAPI(WebteIzle())
         registerExtractorAPI(Dzen())
         registerExtractorAPI(StreamRubyExtractor())
+        registerExtractorAPI(VidmolyNet())
     }
 }

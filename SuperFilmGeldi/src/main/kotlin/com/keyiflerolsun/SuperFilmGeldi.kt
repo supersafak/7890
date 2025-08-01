@@ -176,7 +176,7 @@ class SuperFilmGeldi : MainAPI() {
             )
         } else {
             if (iframe.contains("vidmoly")) {
-                val frame = iframe.replace("vidmoly.to", "vidmoly.me")
+                val frame = iframe.replace("vidmoly.to", "vidmoly.net")
                 loadExtractor(frame,"${mainUrl}/", subtitleCallback, callback)
             } else {
                 loadExtractor(iframe, "${mainUrl}/", subtitleCallback, callback)

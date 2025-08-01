@@ -232,7 +232,7 @@ class WebteIzle : MainAPI() {
                         val vidId = matchResult.groupValues[2]
                         Log.d("WBTI", "platform » $platform")
                         iframe = when (platform) {
-                            "vidmoly" -> "https://vidmoly.me/embed-${vidId}.html"
+                            "vidmoly" -> "https://vidmoly.net/embed-${vidId}.html"
                             "okru" -> "https://odnoklassniki.ru/videoembed/${vidId}"
                             "filemoon" -> "https://filemoon.sx/e/${vidId}"
                             "pixel" -> "https://pixeldrain.com/u/${vidId}?embed&style=hacker"

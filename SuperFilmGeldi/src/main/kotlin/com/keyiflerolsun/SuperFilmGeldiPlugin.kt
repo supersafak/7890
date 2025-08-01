@@ -10,5 +10,6 @@ class SuperFilmGeldiPlugin: Plugin() {
         registerMainAPI(SuperFilmGeldi())
         registerExtractorAPI(MixPlayHD())
         registerExtractorAPI(MixTiger())
+        registerExtractorAPI(VidmolyNet())
     }
 }
