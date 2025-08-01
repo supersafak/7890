@@ -1,5 +1,6 @@
 package com.nikyokki
 
+import android.util.Log
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.Actor
 import com.lagradost.cloudstream3.Episode
@@ -24,6 +25,8 @@ import com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.newTvSeriesLoadResponse
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
+import com.lagradost.cloudstream3.utils.HlsPlaylistParser
+import com.lagradost.cloudstream3.utils.M3u8Helper
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.getQualityFromName
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -171,82 +174,20 @@ class HDFilmSitesi : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+        Log.d("HDS", "data -> $data")
         if (data.contains("vidmody")) {
             val aa = app.get(data, referer = "${mainUrl}/").document
             val bb = aa.body().selectFirst("script").toString()
                 .substringAfter("var id =").substringBefore(";")
                 .replace("'", "").trim()
             val m3uLink = "https://vidmody.com/vs/$bb"
-            val m3uicerik = app.get(m3uLink, referer = mainUrl).text
-            val audioRegex = Regex(
-                "#EXT-X-MEDIA:TYPE=AUDIO,.*NAME=\"(.*?)\".*URI=\"(.*?)\"",
-                RegexOption.MULTILINE
-            )
-            val audioMatches = audioRegex.findAll(m3uicerik)
-            audioMatches.forEach { matchResult ->
-                val name = matchResult.groupValues[1]
-                val uri = matchResult.groupValues[2]
-            }
-
-            val audioList = audioMatches.toList()
-            // SUBTITLES verilerini al
-            val subtitlesRegex = Regex(
-                "#EXT-X-MEDIA:TYPE=SUBTITLES,.*NAME=\"(.*?)\".*URI=\"(.*?)\"",
-                RegexOption.MULTILINE
-            )
-            val subtitlesMatches = subtitlesRegex.findAll(m3uicerik)
-            subtitlesMatches.forEach { matchResult ->
-                val name = matchResult.groupValues[1]
-                val uri = matchResult.groupValues[2]
-                subtitleCallback.invoke(
-                    SubtitleFile(
-                        lang = name,
-                        url = fixUrl(uri)
-                    )
-                )
-            }
-
-            // STREAM verilerini al
-            val streamRegex = Regex(
-                "#EXT-X-STREAM-INF:.*RESOLUTION=(\\d+x\\d+).*\\s+(https?://\\S+)",
-                RegexOption.MULTILINE
-            )
-            val streamMatches = streamRegex.findAll(m3uicerik)
-            streamMatches.forEachIndexed { index, matchResult ->
-                val resolution = matchResult.groupValues[1]
-                val uri = matchResult.groupValues[2]
-                val uriv2 = matchResult.groupValues[2].replace("a1.gif", "a2.gif")
-                var name1 = ""
-                var name2 = ""
-                if (audioList.isNotEmpty()) {
-                    name1 = audioList[0].groupValues.getOrNull(1).toString()
-                    name2 = audioList[1].groupValues.getOrNull(1).toString()
-                }
-                callback.invoke(
-                    newExtractorLink(
-                        source = this.name,
-                        name = "$resolution - $name1",
-                        url = uri,
-                        ExtractorLinkType.M3U8
-                    ) {
-                        this.referer = uri
-                        this.quality = getQualityFromName("4k")
-                    }
-                )
-                callback.invoke(
-                    newExtractorLink(
-                        source = this.name,
-                        name = "$resolution - $name2",
-                        url = uriv2,
-                        ExtractorLinkType.M3U8
-                    ) {
-                        this.referer = uriv2
-                        this.quality = getQualityFromName("4k")
-                    }
-                )
-            }
+            Log.d("HDS", "m3uLink -> $m3uLink")
+            M3u8Helper.generateM3u8(
+                name,
+                m3uLink,
+                "$mainUrl/"
+            ).forEach(callback)
         } else if (data.contains("vidlop")) {
-
             val vidUrl = app.post(
                 "https://vidlop.com/player/index.php?data=" + data.split("/")
                     .last() + "&do=getVideo",
@@ -277,23 +218,19 @@ class HDFilmSitesi : MainAPI() {
             val iframeData = iframeSkici.iframeCoz(value!!)
             val iframeLink = app.get(iframeData, referer = "${mainUrl}/").url.toString()
             if (iframeLink.contains("vidmody")) {
+                Log.d("HDS", "iframeLink -> $iframeLink")
                 val aa = app.get(iframeLink, referer = "${mainUrl}/").document
                 val bb = aa.body().selectFirst("script").toString()
                     .substringAfter("var id =").substringBefore(";")
                     .replace("'", "").trim()
                 val m3uLink = "https://vidmody.com/vs/$bb"
-                callback.invoke(
-                    newExtractorLink(
-                        source = this.name,
-                        name = this.name,
-                        url = m3uLink,
-                        ExtractorLinkType.M3U8
-                    ) {
-                        this.referer = "$mainUrl/"
-                        this.quality = getQualityFromName("4k")
-                    }
-                )
-                loadExtractor(iframeLink, "$mainUrl/", subtitleCallback, callback)
+                Log.d("HDS", "m3uLink -> $m3uLink")
+                M3u8Helper.generateM3u8(
+                    "VidMody",
+                    m3uLink,
+                    "$mainUrl/"
+                ).forEach(callback)
+
             } else if (iframeLink.contains("vidlop")) {
                 val vidUrl = app.post(
                     "https://vidlop.com/player/index.php?data=" + data.split("/")
