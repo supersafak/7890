@@ -112,33 +112,29 @@ open class CloseLoadExtractor : ExtractorApi() {
     }
 
     fun dcNew(parts: List<String>): String {
-        val value = parts.joinToString("")
-        val decodedBytes = base64DecodeArray(value)
-        val rot13Bytes = decodedBytes.map { byte ->
-            val c = byte.toInt()
-            when (c) {
-                in 'a'.code..'z'.code -> {
-                    val base = 'a'.code
-                    (((c - base + 13) % 26) + base).toByte()
+        val combinedValue = parts.joinToString("")
+        val rot13Applied = combinedValue.map { char ->
+            when (char) {
+                in 'a'..'z' -> {
+                    val shifted = char + 13
+                    if (shifted > 'z') shifted - 26 else shifted
                 }
-                in 'A'.code..'Z'.code -> {
-                    val base = 'A'.code
-                    (((c - base + 13) % 26) + base).toByte()
+                in 'A'..'Z' -> {
+                    val shifted = char + 13
+                    if (shifted > 'Z') shifted - 26 else shifted
                 }
-                else -> {
-                    byte
-                }
+                else -> char
             }
-        }.toByteArray()
-        val reversedBytes = rot13Bytes.reversedArray()
-        val unmixedBytes = ByteArray(reversedBytes.size)
-        for (i in reversedBytes.indices) {
-            val charCode = reversedBytes[i].toInt() and 0xFF
-            val offset = 399756995 % (i + 5)
-            val newCharCode = floorMod(charCode - offset, 256)
-            unmixedBytes[i] = newCharCode.toByte()
+        }.joinToString("")
+        val base64DecodedString = base64Decode(rot13Applied)
+        val reversedString = base64DecodedString.reversed()
+        val result = StringBuilder()
+        reversedString.forEachIndexed { i, char ->
+            var charCode = char.code
+            charCode = (charCode - (399756995 % (i + 5)) + 256) % 256
+            result.append(charCode.toChar())
         }
-        return String(unmixedBytes, Charsets.ISO_8859_1)
+        return result.toString()
     }
 }
 
