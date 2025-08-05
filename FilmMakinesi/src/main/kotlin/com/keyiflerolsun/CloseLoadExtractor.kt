@@ -112,29 +112,24 @@ open class CloseLoadExtractor : ExtractorApi() {
     }
 
     fun dcNew(parts: List<String>): String {
-        val combinedValue = parts.joinToString("")
-        val rot13Applied = combinedValue.map { char ->
+        var result = parts.joinToString("")
+        result = result.reversed()
+        val decodeArray = base64DecodeArray(result)
+        result = String(decodeArray, Charsets.ISO_8859_1)
+        result = result.map { char ->
             when (char) {
-                in 'a'..'z' -> {
-                    val shifted = char + 13
-                    if (shifted > 'z') shifted - 26 else shifted
-                }
-                in 'A'..'Z' -> {
-                    val shifted = char + 13
-                    if (shifted > 'Z') shifted - 26 else shifted
-                }
+                in 'a'..'z' -> ((char.code - 'a'.code + 13) % 26 + 'a'.code).toChar()
+                in 'A'..'Z' -> ((char.code - 'A'.code + 13) % 26 + 'A'.code).toChar()
                 else -> char
             }
         }.joinToString("")
-        val base64DecodedString = base64Decode(rot13Applied)
-        val reversedString = base64DecodedString.reversed()
-        val result = StringBuilder()
-        reversedString.forEachIndexed { i, char ->
+        val unmixed = StringBuilder()
+        for ((i, char) in result.withIndex()) {
             var charCode = char.code
-            charCode = (charCode - (399756995 % (i + 5)) + 256) % 256
-            result.append(charCode.toChar())
+            charCode = ((charCode - (399756995L % (i + 5)) + 256) % 256).toInt()
+            unmixed.append(charCode.toChar())
         }
-        return result.toString()
+        return unmixed.toString()
     }
 }
 
