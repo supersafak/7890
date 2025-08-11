@@ -39,7 +39,7 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 class InatBox : MainAPI() {
-    private val contentUrl = "https://dizibox.rest"
+    private val contentUrl = "https://dizibox.cfd"
 
     override var name = "InatBox"
     override val hasMainPage = true
