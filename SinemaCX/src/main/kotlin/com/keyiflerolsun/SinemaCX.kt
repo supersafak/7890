@@ -29,7 +29,7 @@ import com.lagradost.cloudstream3.utils.newExtractorLink
 import org.jsoup.nodes.Element
 
 class SinemaCX : MainAPI() {
-    override var mainUrl = "https://www.sinema.dev"
+    override var mainUrl = "https://www.sinema.ph"
     override var name = "SinemaCX"
     override val hasMainPage = true
     override var lang = "tr"
