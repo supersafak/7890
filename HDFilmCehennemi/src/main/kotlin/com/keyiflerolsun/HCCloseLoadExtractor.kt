@@ -121,31 +121,28 @@ open class HCCloseLoadExtractor : ExtractorApi() {
 
     fun dcNew(parts: List<String>): String {
         var value = parts.joinToString("")
-        var result = value.map { char ->
-            when (char) {
-                in 'a'..'z' -> {
-                    var c = char.code + 13
-                    if (c > 'z'.code) c -= 26
-                    c.toChar()
-                }
-                in 'A'..'Z' -> {
-                    var c = char.code + 13
-                    if (c > 'Z'.code) c -= 26
-                    c.toChar()
-                }
-                else -> char
+        val decodedBytes = base64DecodeArray(value)
+        var result = String(decodedBytes, Charsets.ISO_8859_1).reversed()
+        val rot13Applied = StringBuilder()
+        for (c in result) {
+            if (c in 'a'..'z') {
+                val newChar = c + 13
+                rot13Applied.append(if (newChar > 'z') newChar - 26 else newChar)
+            } else if (c in 'A'..'Z') {
+                val newChar = c + 13
+                rot13Applied.append(if (newChar > 'Z') newChar - 26 else newChar)
+            } else {
+                rot13Applied.append(c)
             }
-        }.joinToString("")
-        val decodedBytes = base64DecodeArray(result)
-        result = String(decodedBytes, Charsets.ISO_8859_1)
-        result = result.reversed()
-        var unmix = ""
+        }
+        result = rot13Applied.toString()
+        val unmix = StringBuilder()
         for ((i, char) in result.withIndex()) {
             var charCode = char.code
             charCode = (charCode - (399756995 % (i + 5)) + 256) % 256
-            unmix += charCode.toChar()
+            unmix.append(charCode.toChar())
         }
-        return unmix
+        return unmix.toString()
     }
 }
 
