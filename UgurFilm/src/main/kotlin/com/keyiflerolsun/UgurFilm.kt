@@ -3,13 +3,13 @@
 package com.keyiflerolsun
 
 import android.util.Log
-import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
+import org.jsoup.nodes.Element
 
 class UgurFilm : MainAPI() {
-    override var mainUrl             = "https://ugurfilm9.com"
+    override var mainUrl             = "https://ugurfilm1.xyz"
     override var name                = "UgurFilm"
     override val hasMainPage         = true
     override var lang                = "tr"
@@ -31,15 +31,15 @@ class UgurFilm : MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val document = app.get("${request.data}${page}").document
-        val home     = document.select("div.icerik div").mapNotNull { it.toSearchResult() }
+        val home     = document.select("div.icerik div.frag-k").mapNotNull { it.toSearchResult() }
 
         return newHomePageResponse(request.name, home)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title     = this.selectFirst("span:nth-child(1)")?.text()?.trim() ?: return null
-        val href      = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null
-        val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        val title     = this.selectFirst("a.baslik span")?.text()?.trim() ?: return null
+        val href      = fixUrlNull(this.selectFirst("a.resim")?.attr("href")) ?: return null
+        val posterUrl = fixUrlNull(this.selectFirst("a.resim img")?.attr("src"))
 
         return newTvSeriesSearchResponse(title, href, TvType.Movie) { this.posterUrl = posterUrl }
     }
@@ -47,7 +47,7 @@ class UgurFilm : MainAPI() {
     override suspend fun search(query: String): List<SearchResponse> {
         val document = app.get("${mainUrl}/?s=${query}").document
 
-        return document.select("div.icerik div").mapNotNull { it.toSearchResult() }
+        return document.select("div.icerik div.frag-k").mapNotNull { it.toSearchResult() }
     }
 
     override suspend fun quickSearch(query: String): List<SearchResponse> = search(query)
@@ -55,17 +55,17 @@ class UgurFilm : MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
 
-        // BAŞLIK SEÇİCİSİ GÜNCELLENDİ: Daha önce 'h2' idi, şimdi 'h1'.
-        val title          = document.selectFirst("div.bilgi h1")?.text()?.trim() ?: return null
-        val poster         = fixUrlNull(document.selectFirst("div.resim img")?.attr("src"))
-        val year           = document.selectFirst("a[href*='/yil/']")?.text()?.trim()?.toIntOrNull()
-        val description    = document.selectFirst("div.slayt-aciklama")?.text()?.trim()
-        val tags           = document.select("p.tur a[href*='/category/']").map { it.text() }
-        val rating         = document.selectFirst("span.puan")?.text()?.split(" ")?.last()
-        // SÜRE SEÇİCİSİ GÜNCELLENDİ: XPath yerine daha kararlı bir CSS seçicisi kullanıldı.
-        val duration       = document.selectFirst("p:contains(Süre:) b")?.text()?.split(" ")?.firstOrNull()?.trim()?.toIntOrNull()
-        val actors         = document.select("li.oyuncu-k").map {
-            Actor(it.selectFirst("span")!!.text(), it.selectFirst("img")?.attr("src"))
+        val title          = document.selectFirst("div.bilgi h2")?.text()?.trim().takeIf { !it.isNullOrBlank() } ?: return null
+        val poster         = fixUrlNull(document.selectFirst("div#slayt div.resim img")?.attr("src"))
+        val year           = document.selectFirst("div.bilgi a[href*='/yil/']")?.text()?.trim()?.toIntOrNull()
+        val description    = document.selectFirst("div.bilgi div.slayt-aciklama")?.text()?.trim()
+        val tags           = document.select("div.bilgi p.tur a[href*='/category/']").map { it.text() }
+        val rating         = document.selectFirst("div#slayt span.puan")?.text()?.split(":")?.lastOrNull()?.trim()
+        val duration       = document.selectFirst("div.bilgi p:contains(Süre:) b")?.text()?.split(" ")?.firstOrNull()?.trim()?.toIntOrNull()
+        val actors         = document.select("li.oyuncu-k").mapNotNull {
+            val name = it.selectFirst("span.isim")?.text()
+            val image = it.selectFirst("img")?.attr("src")
+            if (name != null) Actor(name, image) else null
         }
 
         return newMovieLoadResponse(title, url, TvType.Movie, url) {
@@ -80,35 +80,23 @@ class UgurFilm : MainAPI() {
     }
 
     override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
-        Log.d("UGF", "data » $data")
         val mainDocument = app.get(data).document
 
-        mainDocument.select("li.parttab a").forEach {
-            val subUrl  = fixUrlNull(it.attr("href")) ?: return false
-            val document = app.get(subUrl).document
+        mainDocument.select("ul#f_part li.parttab a").forEach {
+            val subUrl  = fixUrlNull(it.attr("href")) ?: return@forEach
+            val document = if (subUrl == data) mainDocument else app.get(subUrl).document
 
             val iframe   = fixUrlNull(document.selectFirst("div#vast iframe")?.attr("src")) ?: return@forEach
-            Log.d("UGF", "iframe » $iframe")
 
             if (iframe.contains(mainUrl)) {
-                // KAYNAK SEÇİCİSİ VE AJAX YANITI KONTROLÜ GEREKLİ!
-                // Eğer hata hala devam ediyorsa, bu bölümdeki seçicinin veya AjaxSource yapısının değiştiğini gösterir.
-                // Lütfen önceki açıklamalarda belirttiğim gibi ugurfilm9.com/player/play.php?vid=... URL'sini tarayıcınızda açıp
-                // Geliştirici Araçları (F12) ile "Elements" ve "Network" sekmelerini kontrol edin.
-                // li.c-dropdown__item hala doğru mu?
                 val kaynaklar = app.get(iframe, referer=data).document.select("li.c-dropdown__item").associate { kaynak ->
                     kaynak.attr("data-dropdown-value") to kaynak.attr("data-order-value")
                 }
-                Log.d("UGF", "kaynaklar » $kaynaklar")
 
                 val vidId    = iframe.substringAfter("/play.php?vid=").trim()
-                Log.d("UGF", "vidId » $vidId")
-
                 val yuklenenler = mutableListOf<String>()
 
                 for ((kaynak, order) in kaynaklar) {
-                    Log.d("UGF", "kaynak » $kaynak | order » $order")
-
                     val playerApi = app.post(
                         "${mainUrl}/player/ajax_sources.php",
                         data = mapOf(
@@ -117,8 +105,8 @@ class UgurFilm : MainAPI() {
                             "ord"         to order
                         )
                     ).text
+                    
                     val playerData = AppUtils.tryParseJson<AjaxSource>(playerApi) ?: continue
-                    Log.d("UGF", "playerData » $playerData")
 
                     if (playerData.iframe in yuklenenler) continue
 
