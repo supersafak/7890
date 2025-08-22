@@ -252,7 +252,7 @@ class YabanciDizi : MainAPI() {
                                 dataLink.replace("/", "_").replace("+", "-"),
                         referer = "$mainUrl/",
                         headers =
-                        mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0")
+                        mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0", "Cookie" to "udys=$timestampMillis")
                     ).document
                     var subFrame = mac.selectFirst("iframe")?.attr("src") ?: ""
                     if (subFrame.isEmpty()) {
@@ -265,7 +265,7 @@ class YabanciDizi : MainAPI() {
                             referer = "https://yabancidizi.so/api/drives/" +
                                     dataLink.replace("/", "_").replace("+", "-"),
                             headers =
-                            mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0")
+                            mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0", "Cookie" to "udys=$timestampMillis")
                         ).document
                         subFrame = drives.selectFirst("iframe")?.attr("src") ?: ""
                         Log.d("YBD", "subFrame -> $subFrame")
@@ -281,7 +281,7 @@ class YabanciDizi : MainAPI() {
                         "https://yabancidizi.so/api/moly/" +
                                 dataLink.replace("/", "_").replace("+", "-"), referer = "$mainUrl/",
                         headers =
-                        mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0")
+                        mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0", "Cookie" to "udys=$timestampMillis")
                     ).document
                     val subFrame = vdm.selectFirst("iframe")?.attr("src") ?: ""
                     Log.d("YBD", "Vidmoly subFrame -> $subFrame")
@@ -304,7 +304,7 @@ class YabanciDizi : MainAPI() {
                         "https://yabancidizi.so/api/ruplay/" +
                                 dataLink.replace("/", "_").replace("+", "-"), referer = "$mainUrl/",
                         headers =
-                        mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0")
+                        mapOf("user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0", "Cookie" to "udys=$timestampMillis")
                     ).document
                     val subFrame = okr.selectFirst("iframe")?.attr("src") ?: ""
                     Log.d("YBD", "Okru subFrame -> $subFrame")
