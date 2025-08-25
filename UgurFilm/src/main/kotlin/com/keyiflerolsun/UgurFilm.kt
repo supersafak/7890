@@ -111,10 +111,10 @@ class UgurFilm : MainAPI() {
                     if (playerData.iframe in yuklenenler) continue
 
                     yuklenenler.add(playerData.iframe)
-                    loadExtractor(playerData.iframe, "${mainUrl}/", subtitleCallback, callback)
+                    loadExtractor(playerData.iframe.replace("vidmoly.me", "vidmoly.net"), "${mainUrl}/", subtitleCallback, callback)
                 }
             } else {
-                loadExtractor(iframe, "${mainUrl}/", subtitleCallback, callback)
+                loadExtractor(iframe.replace("vidmoly.me", "vidmoly.net"), "${mainUrl}/", subtitleCallback, callback)
             }
         }
 
