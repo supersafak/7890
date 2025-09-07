@@ -53,7 +53,7 @@ class InatBox : MainAPI() {
 
     override val mainPage = mainPageOf(
         "https://boxyz.cfd/CDN/001_STR/boxyz.cfd/spor_v2.php" to "Spor Kanalları",
-        "${contentUrl}/tv/cable.php" to "Kanallar Liste 1",
+        "${contentUrl}/tv/list1.php" to "Kanallar Liste 1",
         "${contentUrl}/tv/list2.php" to "Kanallar Liste 2",
         "${contentUrl}/tv/sinema.php" to "Sinema Kanalları",
         "${contentUrl}/tv/belgesel.php" to "Belgesel Kanalları",
