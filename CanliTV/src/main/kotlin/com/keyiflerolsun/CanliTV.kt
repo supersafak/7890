@@ -50,7 +50,7 @@ class CanliTV : MainAPI() {
             "Cache-Control" to "max-age=0",
             "Connection" to "keep-alive",
             "Accept-Encoding" to "gzip",
-            "Authorization" to "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnYiOiJMSVZFIiwiaXBiIjoiMCIsImNnZCI6IjA5M2Q3MjBhLTUwMmMtNDFlZC1hODBmLTJiODE2OTg0ZmI5NSIsImNzaCI6IlRSS1NUIiwiZGN0IjoiM0VGNzUiLCJkaSI6ImE2OTliODNmLTgyNmItNGQ5OS05MzYxLWM4YTMxMzIxOGQ0NiIsInNnZCI6Ijg5NzQxZmVjLTFkMzMtNGMwMC1hZmNkLTNmZGFmZTBiNmEyZCIsInNwZ2QiOiIxNTJiZDUzOS02MjIwLTQ0MjctYTkxNS1iZjRiZDA2OGQ3ZTgiLCJpY2giOiIwIiwiaWRtIjoiMCIsImlhIjoiOjpmZmZmOjEwLjAuMC4yMDYiLCJhcHYiOiIxLjAuMCIsImFibiI6IjEwMDAiLCJuYmYiOjE3NDUxNTI4MjUsImV4cCI6MTc0NTE1Mjg4NSwiaWF0IjoxNzQ1MTUyODI1fQ.OSlafRMxef4EjHG5t6TqfAQC7y05IiQjwwgf6yMUS9E"
+            "Authorization" to "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FwaS5maWxtYm94LmNvbS8iLCJhdWQiOiJodHRwczovL2FwaS5maWxtYm94LmNvbS8iLCJzdWIiOiJGaWxtQm94KyIsImp0aSI6InR2MnoxNjk1Nzc5Nzc3IiwiaWF0IjoxNjk1Nzc5Nzc3LCJuYmYiOjE2OTU3Nzk3NzcsImV4cCI6MTcwNDQxOTc3NywidV9pZCI6IjMxMjVkMGNjLTc2ZDktNDQzYi1iMTQ4LWVhNjZmYzRlZjBiMiIsImRfaWQiOiJlZDliZmQzNS03YmIzLTQwNTEtOWIyZi00OWY4Y2JlYzZjYmUiLCJndWVzdCI6MH0.2Q0TisOzgnJJCvd5gkkHRzBRaD3S2nsTQ1WCFSVmd5Y"
         )
 
         val response = app.get(mainUrl, headers = headers)
