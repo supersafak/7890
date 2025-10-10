@@ -1,7 +1,7 @@
 {
     "name": "supersafak",
     "description": "Türkçe içerikli eklenti havuzu",
-    "manifestVersion": 1,
+    "manifestVersion": 3,
     "pluginLists": [
       "https://raw.githubusercontent.com/supersafak/7890/refs/heads/master/repo.json"
     ]
