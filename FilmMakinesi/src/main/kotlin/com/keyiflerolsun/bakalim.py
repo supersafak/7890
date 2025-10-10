@@ -9,7 +9,7 @@ from base64       import b64decode
 oturum  = CloudScraper()
 oturum.headers.update({"User-Agent":"Mozilla/5.0", "Referer":"https://filmmakinesi.film/"})
 
-film_link = "https://filmmakinesi.de/film/28-yil-sonra-izle-2025-fm9/"
+film_link = "https://filmmakinesi.tv/film/28-yil-sonra-izle-2025-fm9/"
 
 istek   = oturum.get(film_link)
 secici  = Selector(istek.text)
