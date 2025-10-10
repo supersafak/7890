@@ -15,7 +15,7 @@ import java.lang.Math.floorMod
 
 open class CloseLoadExtractor : ExtractorApi() {
     override val name            = "CloseLoad"
-    override val mainUrl         = "https://closeload.filmmakinesi.de"
+    override val mainUrl         = "https://closeload.filmmakinesi.tv"
     override val requiresReferer = true
 
     override suspend fun getUrl(url: String, referer: String?, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit) {
